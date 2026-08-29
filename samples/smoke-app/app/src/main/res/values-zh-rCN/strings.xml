@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">平台验证应用</string>
+    <string name="interaction_count">交互次数：%1$d</string>
+    <string name="platform_ready">平台插件已生效。</string>
+    <string name="primary_action">验证交互</string>
+</resources>

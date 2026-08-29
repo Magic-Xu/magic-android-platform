@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Platform smoke app</string>
+    <string name="interaction_count">Interactions: %1$d</string>
+    <string name="platform_ready">Platform plugins are active.</string>
+    <string name="primary_action">Verify interaction</string>
+</resources>
