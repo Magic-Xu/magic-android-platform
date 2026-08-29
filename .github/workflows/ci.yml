@@ -24,3 +24,8 @@ jobs:
         run: ./gradlew platformCheck publicationCheck
       - name: Build isolated capability matrix
         run: ./gradlew -p samples/smoke-app check assembleDebug
+      - name: Build published-artifact capability matrix
+        run: |
+          ./gradlew -p samples/smoke-app \
+            -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
+            clean check assembleDebug

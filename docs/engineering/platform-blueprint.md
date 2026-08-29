@@ -101,6 +101,7 @@ pluginManagement {
 - 独立 Smoke App；
 - CI；
 - 单实现制品、四 marker 的发布元数据验证；
+- 同一 Smoke 能力矩阵分别通过源码 composite 和本地 Maven marker 制品消费；
 - Gradle configuration cache 验证。
 
 验证命令：
@@ -108,11 +109,14 @@ pluginManagement {
 ```bash
 ./gradlew platformCheck publicationCheck
 ./gradlew -p samples/smoke-app check assembleDebug
+./gradlew -p samples/smoke-app \
+  -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
+  clean check assembleDebug
 ```
 
 ### Phase 1：TickFloat 首个真实试点
 
-状态：本地 composite 接入与出包验证已完成，用户已确认接入成功。
+状态：源码 composite 与本地 Maven marker 两种接入均已完成完整构建和设备冒烟，用户已确认接入成功。
 
 选择 TickFloat 的原因：
 
@@ -142,12 +146,12 @@ Phase 1 只接入：
 
 - TickFloat 仅启用 Application、Compose、Quality，未被隐式绑定 Pulse；
 - Android 36.1、App 身份、可选 release signing、SplashScreen 和测试依赖继续由 App 持有；
-- 平台 Quality 检查通过，Debug APK 和经过 R8/资源压缩的 unsigned Release APK 构建成功；
+- 源码 composite 与本地 Maven marker 两种模式均通过依赖解析、Quality、Lint、单测、Debug APK、
+  Release/R8 APK 和 Release AAB；
+- Debug APK 已安装到真实设备并完成冷启动、悬浮前台服务启动/停止与无崩溃冒烟；
+- Maven 模式任务图不包含平台源码任务，并能存储和复用 Gradle configuration cache；
 - `translatable="false"` 默认资源不再被错误要求出现在各语言目录，并有平台契约测试覆盖；
 - 平台源码未引入 TickFloat 包名、权限、产品模型或其他 Consumer 特例。
-
-尚未作为本次出包重试证据完成的是 TickFloat 的完整 Lint、单测、AAB 和设备流程；这些仍应在
-TickFloat 合并前由其原有交付流程验证，不能由 APK 构建成功替代。
 
 ### Phase 2：SnapMosaic 完整能力试点
 
@@ -223,10 +227,10 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 - 平台 v0.1 骨架已实现并形成首个本地提交，但尚未推送或正式发布；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合均已通过 clean、check 和 Debug APK 构建；
-- TickFloat 已完成 Application、Compose、Quality 的本地 composite 迁移，并通过 Quality、Debug 和 Release/R8 出包；
+- TickFloat 已完成 Application、Compose、Quality 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟；
 - 发布检查会自动断言一个实现 JAR、一个 sources JAR、四个 marker POM，且 marker 均指向同一实现版本；
 - Factory 尚未修改；
-- 平台尚无远端和发布版本，因此 TickFloat 当前的 sibling composite 路径不能直接供 GitHub 托管 CI 使用。
+- 平台尚无远端和发布版本，因此 GitHub 托管 CI 当前无法取得平台源码或制品；现阶段双模式验证均为本地证据。
 
 下一动作：
 

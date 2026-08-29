@@ -1,6 +1,22 @@
 pluginManagement {
-    includeBuild("../..")
+    val magicAndroidPlatformRepositoryPath = providers
+        .gradleProperty("magicAndroidPlatformRepositoryPath")
+        .orNull
+    val magicAndroidPlatformVersion = providers
+        .gradleProperty("magicAndroidPlatformVersion")
+        .getOrElse("0.1.0-SNAPSHOT")
+
+    if (magicAndroidPlatformRepositoryPath == null) {
+        includeBuild("../..")
+    }
+
     repositories {
+        if (magicAndroidPlatformRepositoryPath != null) {
+            maven {
+                name = "magicAndroidPlatformVerification"
+                url = uri(magicAndroidPlatformRepositoryPath)
+            }
+        }
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -10,6 +26,13 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+    }
+
+    plugins {
+        id("io.github.magic-xu.magic-android-application") version magicAndroidPlatformVersion
+        id("io.github.magic-xu.magic-android-compose") version magicAndroidPlatformVersion
+        id("io.github.magic-xu.magic-android-pulse") version magicAndroidPlatformVersion
+        id("io.github.magic-xu.magic-android-quality") version magicAndroidPlatformVersion
     }
 }
 

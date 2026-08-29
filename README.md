@@ -32,7 +32,13 @@ Run the plugin tests and then compile the isolated consumer:
 ```bash
 ./gradlew platformCheck publicationCheck
 ./gradlew -p samples/smoke-app check assembleDebug
+./gradlew -p samples/smoke-app \
+  -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
+  clean check assembleDebug
 ```
+
+The Maven-mode Smoke App build consumes the generated plugin marker POMs and implementation JAR from
+the isolated Maven repository. It must not resolve the platform through the composite source build.
 
 ## Use from a local consumer
 
