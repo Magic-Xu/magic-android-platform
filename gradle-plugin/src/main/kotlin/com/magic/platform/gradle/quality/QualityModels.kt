@@ -10,6 +10,7 @@ internal enum class QualityRule(val label: String) {
     LocaleParity("locale-parity"),
     MviSkeleton("mvi-skeleton"),
     PackagePath("package-path"),
+    UiPlatformBoundary("ui-platform-boundary"),
 }
 
 internal data class QualityViolation(

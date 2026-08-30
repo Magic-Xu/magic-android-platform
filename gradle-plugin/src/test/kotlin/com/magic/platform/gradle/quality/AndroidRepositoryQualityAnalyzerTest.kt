@@ -92,6 +92,58 @@ class AndroidRepositoryQualityAnalyzerTest {
     }
 
     @Test
+    fun reportsPlatformAndIoImportsFromFeatureUi() {
+        val forbiddenImports = listOf(
+            "android.content.Intent",
+            "androidx.activity.compose.rememberLauncherForActivityResult",
+            "androidx.compose.ui.platform.LocalContext",
+            "androidx.core.content.FileProvider",
+            "com.google.android.gms.tasks.Task",
+            "com.google.firebase.FirebaseApp",
+            "java.io.File",
+            "okhttp3.OkHttpClient",
+            "retrofit2.Retrofit",
+        )
+        source(
+            "src/main/kotlin/com/example/feature/home/ui/HomeContent.kt",
+            buildString {
+                appendLine("package com.example.feature.home.ui")
+                appendLine()
+                forbiddenImports.forEach { appendLine("import $it") }
+            },
+        )
+
+        val violations = analyze().filter { it.rule == QualityRule.UiPlatformBoundary }
+
+        assertEquals(forbiddenImports.size, violations.size)
+        forbiddenImports.forEach { forbiddenImport ->
+            assertTrue(violations.any { forbiddenImport in it.message })
+        }
+    }
+
+    @Test
+    fun allowsPlatformApisInAppEffectsAndNetworkApisInFeatureData() {
+        source(
+            "src/main/kotlin/com/example/app/effect/ShareEffectHandler.kt",
+            """
+            package com.example.app.effect
+
+            import android.content.Intent
+            """,
+        )
+        source(
+            "src/main/kotlin/com/example/feature/home/data/HomeRepository.kt",
+            """
+            package com.example.feature.home.data
+
+            import okhttp3.OkHttpClient
+            """,
+        )
+
+        assertTrue(analyze().isEmpty())
+    }
+
+    @Test
     fun reportsPackagePathAndFileSizeViolations() {
         source(
             "src/main/kotlin/com/example/core/WrongLocation.kt",

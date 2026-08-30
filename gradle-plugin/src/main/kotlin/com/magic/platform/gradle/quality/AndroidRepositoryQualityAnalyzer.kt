@@ -16,6 +16,7 @@ internal class AndroidRepositoryQualityAnalyzer(
         addAll(checkFileSizes())
         addAll(checkPackagePaths())
         addAll(checkDependencyDirections())
+        addAll(checkUiPlatformBoundaries())
         addAll(checkMviSkeletons())
         addAll(checkLocaleParity())
     }.sortedWith(compareBy({ it.rule.label }, { it.file.path }, { it.message }))
@@ -85,6 +86,21 @@ internal class AndroidRepositoryQualityAnalyzer(
             "feature ${owner.featureName} imports sibling feature ${dependency.featureName}"
 
         else -> null
+    }
+
+    private fun checkUiPlatformBoundaries(): List<QualityViolation> = sources.flatMap { file ->
+        if (!file.isFeatureUiSource()) return@flatMap emptyList()
+        IMPORT_PATTERN.findAll(file.readText()).mapNotNull { match ->
+            val importedPackage = match.groupValues[1]
+            val forbiddenPrefix = FEATURE_UI_FORBIDDEN_IMPORT_PREFIXES.firstOrNull(
+                importedPackage::startsWith,
+            ) ?: return@mapNotNull null
+            QualityViolation(
+                QualityRule.UiPlatformBoundary,
+                file,
+                "feature UI imports platform or IO API $importedPackage via $forbiddenPrefix",
+            )
+        }.toList()
     }
 
     private fun checkMviSkeletons(): List<QualityViolation> {
@@ -205,6 +221,9 @@ internal class AndroidRepositoryQualityAnalyzer(
         )
     }
 
+    private fun File.isFeatureUiSource(): Boolean =
+        FEATURE_UI_PATH_PATTERN.containsMatchIn(invariantSeparatorsPath)
+
     private fun String.layerOwner(): LayerOwner? {
         val segments = split('.')
         val index = segments.indexOfFirst { it in LAYER_NAMES }
@@ -251,5 +270,17 @@ internal class AndroidRepositoryQualityAnalyzer(
             Regex("values-(?:[a-z]{2,3}(?:-r[A-Z]{2})?|b\\+[A-Za-z0-9+]+)")
         val SOURCE_ROOT_MARKERS = listOf("/src/main/java/", "/src/main/kotlin/")
         val LAYER_NAMES = Layer.entries.map(Layer::label).toSet()
+        val FEATURE_UI_PATH_PATTERN = Regex("/feature/[^/]+/ui/")
+        val FEATURE_UI_FORBIDDEN_IMPORT_PREFIXES = listOf(
+            "android.",
+            "androidx.activity.",
+            "androidx.compose.ui.platform.LocalContext",
+            "androidx.core.content.FileProvider",
+            "com.google.android.gms.",
+            "com.google.firebase.",
+            "java.io.",
+            "okhttp3.",
+            "retrofit2.",
+        )
     }
 }
