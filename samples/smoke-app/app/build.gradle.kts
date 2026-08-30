@@ -14,10 +14,3 @@ android {
         versionName = "1.0"
     }
 }
-
-magicQuality {
-    maxProductionFileLines.set(800)
-    enforceDependencyDirection.set(true)
-    enforceMviSkeleton.set(true)
-    enforceLocaleParity.set(true)
-}

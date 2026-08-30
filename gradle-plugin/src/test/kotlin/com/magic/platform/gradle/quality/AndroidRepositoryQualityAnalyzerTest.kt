@@ -70,7 +70,7 @@ class AndroidRepositoryQualityAnalyzerTest {
             """,
         )
 
-        val violations = analyze(enforceMviSkeleton = false)
+        val violations = analyze()
 
         assertEquals(2, violations.count { it.rule == QualityRule.DependencyDirection })
         assertTrue(violations.any { "core imports feature" in it.message })
@@ -88,25 +88,22 @@ class AndroidRepositoryQualityAnalyzerTest {
             """,
         )
 
-        assertTrue(analyze(enforceMviSkeleton = false).isEmpty())
+        assertTrue(analyze().isEmpty())
     }
 
     @Test
     fun reportsPackagePathAndFileSizeViolations() {
         source(
             "src/main/kotlin/com/example/core/WrongLocation.kt",
-            """
-            package com.example.core.platform
-
-            val first = 1
-            val second = 2
-            """,
+            buildString {
+                appendLine("package com.example.core.platform")
+                repeat(PRODUCTION_FILE_LINE_LIMIT) { index ->
+                    appendLine("val line$index = $index")
+                }
+            },
         )
 
-        val violations = analyze(
-            maxProductionFileLines = 3,
-            enforceMviSkeleton = false,
-        )
+        val violations = analyze()
 
         assertTrue(violations.any { it.rule == QualityRule.PackagePath })
         assertTrue(violations.any { it.rule == QualityRule.FileSize })
@@ -161,7 +158,7 @@ class AndroidRepositoryQualityAnalyzerTest {
             mapOf("app_name" to "Exemple", "orphan" to "Orphelin"),
         )
 
-        val violations = analyze(enforceMviSkeleton = false)
+        val violations = analyze()
 
         assertTrue(violations.any { "missing keys: string/home_ready" in it.message })
         assertTrue(violations.any { "unexpected keys: string/orphan" in it.message })
@@ -183,7 +180,7 @@ class AndroidRepositoryQualityAnalyzerTest {
             mapOf("app_name" to "Exemple"),
         )
 
-        assertTrue(analyze(enforceMviSkeleton = false).isEmpty())
+        assertTrue(analyze().isEmpty())
     }
 
     @Test
@@ -197,15 +194,10 @@ class AndroidRepositoryQualityAnalyzerTest {
             mapOf("app_name" to "Example at night"),
         )
 
-        assertTrue(analyze(enforceMviSkeleton = false).isEmpty())
+        assertTrue(analyze().isEmpty())
     }
 
-    private fun analyze(
-        maxProductionFileLines: Int = 800,
-        enforceDependencyDirection: Boolean = true,
-        enforceMviSkeleton: Boolean = true,
-        enforceLocaleParity: Boolean = true,
-    ): List<QualityViolation> {
+    private fun analyze(): List<QualityViolation> {
         val root = temporaryFolder.root
         return AndroidRepositoryQualityAnalyzer(
             projectRoot = root,
@@ -213,12 +205,6 @@ class AndroidRepositoryQualityAnalyzerTest {
             stringResourceFiles = root.walkTopDown()
                 .filter { it.isFile && it.name == "strings.xml" }
                 .toList(),
-            options = QualityOptions(
-                maxProductionFileLines = maxProductionFileLines,
-                enforceDependencyDirection = enforceDependencyDirection,
-                enforceMviSkeleton = enforceMviSkeleton,
-                enforceLocaleParity = enforceLocaleParity,
-            ),
         ).analyze()
     }
 

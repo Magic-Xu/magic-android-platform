@@ -2,6 +2,8 @@ package com.magic.platform.gradle.quality
 
 import java.io.File
 
+internal const val PRODUCTION_FILE_LINE_LIMIT = 400
+
 internal enum class QualityRule(val label: String) {
     DependencyDirection("dependency-direction"),
     FileSize("file-size"),
@@ -21,10 +23,3 @@ internal data class QualityViolation(
         return "[${rule.label}] $path: $message"
     }
 }
-
-internal data class QualityOptions(
-    val maxProductionFileLines: Int,
-    val enforceDependencyDirection: Boolean,
-    val enforceMviSkeleton: Boolean,
-    val enforceLocaleParity: Boolean,
-)

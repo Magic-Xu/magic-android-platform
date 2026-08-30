@@ -99,13 +99,10 @@ plugins {
 ```
 
 The application plugin supplies the shared SDK, Java, release, packaging, and base dependency
-defaults. The Compose and Pulse plugins add their own dependencies. `magicQuality` can disable a
-rule for an existing app while it is being migrated:
-
-```kotlin
-magicQuality {
-    enforceMviSkeleton.set(false)
-}
-```
+defaults. The Compose and Pulse plugins add their own dependencies. Quality rules are an atomic
+standard: package paths, dependency direction, feature MVI skeletons, locale parity, and the
+400-line production Kotlin limit are always enforced. Consumers cannot disable or relax individual
+rules; an app that fails a rule must fix its architecture before the platform integration is
+accepted.
 
 See [architecture.md](docs/engineering/architecture.md) for ownership and dependency boundaries.

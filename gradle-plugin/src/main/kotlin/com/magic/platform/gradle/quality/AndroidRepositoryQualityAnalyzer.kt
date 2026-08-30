@@ -6,7 +6,6 @@ internal class AndroidRepositoryQualityAnalyzer(
     private val projectRoot: File,
     sourceFiles: Collection<File>,
     stringResourceFiles: Collection<File>,
-    private val options: QualityOptions,
 ) {
     private val sources = sourceFiles.filter(File::isFile).sortedBy(File::getPath)
     private val strings = stringResourceFiles
@@ -16,18 +15,18 @@ internal class AndroidRepositoryQualityAnalyzer(
     fun analyze(): List<QualityViolation> = buildList {
         addAll(checkFileSizes())
         addAll(checkPackagePaths())
-        if (options.enforceDependencyDirection) addAll(checkDependencyDirections())
-        if (options.enforceMviSkeleton) addAll(checkMviSkeletons())
-        if (options.enforceLocaleParity) addAll(checkLocaleParity())
+        addAll(checkDependencyDirections())
+        addAll(checkMviSkeletons())
+        addAll(checkLocaleParity())
     }.sortedWith(compareBy({ it.rule.label }, { it.file.path }, { it.message }))
 
     private fun checkFileSizes(): List<QualityViolation> = sources.mapNotNull { file ->
         val lineCount = file.useLines { lines -> lines.count() }
-        if (lineCount <= options.maxProductionFileLines) null else {
+        if (lineCount <= PRODUCTION_FILE_LINE_LIMIT) null else {
             QualityViolation(
                 QualityRule.FileSize,
                 file,
-                "$lineCount lines exceeds the ${options.maxProductionFileLines}-line limit",
+                "$lineCount lines exceeds the $PRODUCTION_FILE_LINE_LIMIT-line limit",
             )
         }
     }

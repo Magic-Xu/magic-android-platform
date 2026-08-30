@@ -33,7 +33,7 @@ Factory 是入口，Platform 是持续演进的工程底座，Pulse 是状态运
 3. 逻辑组件不等于 Maven 组件。没有独立版本诉求，就不拆独立制品。
 4. 平台提供默认值，App 继续使用标准 Android Gradle DSL 覆盖自身身份和特殊配置。
 5. 先用真实 App 证明价值，再扩展平台；没有两个真实消费者的稳定共同语义，不新增 runtime library。
-6. 平台迁移与产品重构分开进行，确保问题来源和回滚边界清晰。
+6. 平台接入可以分提交定位问题，但最终接入不允许关闭质量规则；Consumer 不达标时改造 Consumer。
 7. 本地 composite build 用于开发验证；生成的新 App 最终只依赖已发布的稳定版本。
 
 ## 4. v0.1 边界
@@ -50,7 +50,7 @@ Factory 是入口，Platform 是持续演进的工程底座，Pulse 是状态运
 - Application：SDK、Java、release shrinking、packaging 和基础 Android 依赖默认值；
 - Compose：Compose 编译插件、build feature 和 Compose 依赖基线；
 - Pulse：Pulse Android Compose 与测试依赖；
-- Quality：包路径、依赖方向、页面 MVI 骨架、文件大小和语言资源 key 一致性。
+- Quality：强制包路径、依赖方向、页面 MVI 骨架、生产 Kotlin 文件不超过 400 行和语言资源 key 一致性；没有规则关闭或阈值放宽入口。
 
 v0.1 明确不包含：
 
@@ -167,7 +167,7 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 ### Phase 3：MeloNest 迁移
 
-状态：已在基于最新 `origin/main` 的独立迁移分支完成源码 composite、本地 Maven marker、完整构建和真实设备验证，待用户验收。
+状态：已在基于最新 `origin/main` 的独立迁移分支完成无豁免架构改造；源码 composite、隔离 Maven marker、完整制品和真实设备回归均已通过，待用户验收。
 
 目标：
 
@@ -177,12 +177,14 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 已完成证据：
 
-- 先独立验证原有源码和单测兼容 Pulse 0.4，再由平台接管 Pulse 版本与依赖，未修改产品 Kotlin 代码；
+- 平台接管 Pulse 0.4 后，将原有单一根 Store 改造成 App 路由 Store 与各 feature 独立 Store；
 - Application、Compose、Pulse、Quality 四个插件均已启用，MeloNest 的 Android 36.1、minSdk 29、Firebase、AdMob、测试依赖和不启用 release shrinking 的产品选择继续由 App 持有；
-- MeloNest 采用单一根 Pulse Store，而不是每个 feature 独立 Store；因此仅关闭不符合当前架构的 feature-to-app 依赖方向和每 feature MVI 骨架规则，包路径、文件大小和语言资源检查继续启用；
-- 源码 composite 与本地 Maven marker 两种模式均通过 Quality、Lint、单测、Debug APK、Release APK 和 Release AAB；Maven 模式任务图不包含平台源码任务；
+- App Store 只持有路由，业务 State/Intent/Effect/ViewModel 归对应 feature；跨 feature 编排位于 App effect 层，共享业务状态位于 domain coordinator；
+- `app -> feature -> domain -> core`、feature 隔离、MVI 骨架、locale parity 和 400 行上限全部启用且不可关闭；
+- 源码 composite 已通过 Quality、主代码/单测/仪器测试编译、Debug 单测、Lint、Debug/Release APK 和 Release AAB；
+- 隔离 Maven marker 模式已通过 Quality、Debug 单测和 Debug APK，任务图不依赖 platform 源码；
 - Consumer 实际解析到 Pulse 0.4.0，Gradle configuration cache 可以存储并复用；
-- Debug APK 已保留数据覆盖安装到真实设备，完成冷启动、首页渲染和通过真实点击进入设置页的状态切换；
+- Debug APK 已保留数据覆盖安装到真实设备，完成冷启动、首页渲染，并通过真实点击验证 Library 到 Settings 和 Create 的跨 feature 路由；进程日志无致命异常；
 - Google Services 和 Crashlytics 等 App 级插件保留在 App module 的插件作用域。不要仅在根工程以 `apply false` 声明这类插件，否则其旧版传递构建依赖可能从父类加载器遮蔽平台的 AGP/bundletool 依赖；
 - 未从 MeloNest 提取 Ads、Consent、媒体或存储 runtime。单个新增 Consumer 仍不足以证明这些能力具有稳定共同语义。
 
@@ -190,12 +192,18 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 前提：至少 TickFloat 和一个 Pulse App 完成真实迁移，平台 API 和迁移方式稳定。
 
+状态：Factory 权威生成器已在独立分支完成终态改造，并通过本地 composite 的端到端生成验收；在平台 `1.0.0` 发布前不能作为可用模板合入或交付。
+
 动作：
 
 - 发布首个稳定平台版本；
 - 修改 Magic App Dev 插件中的 canonical Android App Factory 模板；
 - Factory 生成的 App 使用已发布平台版本，不使用本机 sibling path；
 - 更新 Factory acceptance sample 并执行端到端生成验证。
+
+Factory 固定 Application、Compose、Pulse、Quality 四个插件的同一稳定版本，生成 feature-owned
+Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器拒绝 `0.x`、snapshot 和
+本机路径；本地 `--platform-source` 仅供临时验收解析，不写入生成仓库。
 
 ### Phase 5：按证据扩展 runtime
 
@@ -206,8 +214,8 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 1. 只读记录接入前的分支、工作区、构建和测试结果。
 2. 禁止在 `main/master` 直接修改；从最新主干创建平台迁移分支。
 3. 先使用 composite build，应用需要的插件，不立即发布快照。
-4. 第一次提交只做构建层接入和等价去重，不做产品重构。
-5. 对 Quality 误报先判断规则是否通用；不能用产品特例掩盖平台缺陷。
+4. 可以先隔离构建层变化便于诊断；如果 App 不满足平台架构，必须在接入分支继续重构直到全部门禁通过。
+5. Quality 规则无关闭入口。误报应修复平台的通用分析逻辑，真实违规应修复 Consumer，不能写产品特例。
 6. 运行 App 原有测试、`check`、`assembleDebug` 和适用的关键 UI 流程。
 7. 记录平台接管的配置、Consumer 保留的覆盖项、发现的缺口和回滚方式。
 8. 用户验收后才能进入 PR、合并和下一 App。
@@ -241,7 +249,7 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 - TickFloat 已完成 Application、Compose、Quality 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟；
 - MeloNest 已完成四插件、Pulse 0.4 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟，待用户验收；
 - 发布检查会自动断言一个实现 JAR、一个 sources JAR、四个 marker POM，且 marker 均指向同一实现版本；
-- Factory 尚未修改；
+- Factory 终态模板已在独立分支通过本地端到端验收，但等待平台 `1.0.0` 发布后才能形成可用交付；
 - 平台尚无稳定发布版本；真实 App 的 Maven marker 验证仍使用隔离的本地发布仓库。
 
 下一动作：
@@ -249,7 +257,7 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 1. 用户验收 MeloNest 迁移，再决定是否推送、创建 PR 和合并；
 2. 确定开源许可证、Maven Central namespace、签名、SCM 与开发者 POM 元数据，准备首个稳定版本；
 3. TickFloat 与 MeloNest 分别提供非 Pulse 和 Pulse Consumer 证据后，稳定版本不再被 SnapMosaic 试点阻塞；SnapMosaic 等活跃产品改动收口后仍可继续 Phase 2，用于扩大多模块规则证据；
-4. 首个稳定版本发布后再修改 Factory，并执行生成项目的端到端验收。
+4. 发布平台 `1.0.0` 后，以真实 Maven Central 坐标重跑 Factory 端到端验收，再提交 Factory 分支。
 
 ## 11. 新会话恢复顺序
 

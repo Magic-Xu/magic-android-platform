@@ -55,11 +55,11 @@ Registers `magicQualityCheck` and attaches it to the consumer's `check` lifecycl
 - `app -> feature -> domain -> core` dependency direction
 - sibling feature isolation
 - the `Contract / ViewModel / Screen` page skeleton
-- production Kotlin file size
+- production Kotlin files are limited to 400 lines
 - string-resource key parity across declared locale directories
 
-Each semantic rule is configurable so an existing app can migrate incrementally without changing
-the baseline for new apps.
+These checks form one non-configurable standard. Applying the Quality plugin means accepting every
+rule; existing apps are refactored to comply instead of weakening the baseline.
 
 ## Future runtime artifacts
 
