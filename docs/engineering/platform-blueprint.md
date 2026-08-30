@@ -71,7 +71,7 @@ v0.1 明确不包含：
 - 所有插件 ID 使用同一个平台版本；
 - 一次构建、一次验证、一次发布，不分别维护组件版本。
 
-首次正式发布前仍需确定 GitHub 远端、开源许可证、Maven Central namespace、签名和发布凭据。凭据不得进入仓库。
+GitHub public 远端已经建立。首次正式发布前仍需确定开源许可证、Maven Central namespace、签名和发布凭据，并补齐最终 POM 元数据。凭据不得进入仓库。
 
 ## 6. 使用方式
 
@@ -167,13 +167,24 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 ### Phase 3：MeloNest 迁移
 
-前提：当前大规模 UI/Pulse 改造收口，工作区恢复清晰；Pulse 版本迁移与平台接入不能混在一个不可回滚的大改中。
+状态：已在基于最新 `origin/main` 的独立迁移分支完成源码 composite、本地 Maven marker、完整构建和真实设备验证，待用户验收。
 
 目标：
 
 - 验证平台面对第二种大型 Compose 产品结构的通用性；
 - 判断哪些广告、Consent、媒体或存储能力在两个以上 App 中已经形成稳定共同语义；
 - 只记录真正可复用的候选项，不立即拆 runtime artifact。
+
+已完成证据：
+
+- 先独立验证原有源码和单测兼容 Pulse 0.4，再由平台接管 Pulse 版本与依赖，未修改产品 Kotlin 代码；
+- Application、Compose、Pulse、Quality 四个插件均已启用，MeloNest 的 Android 36.1、minSdk 29、Firebase、AdMob、测试依赖和不启用 release shrinking 的产品选择继续由 App 持有；
+- MeloNest 采用单一根 Pulse Store，而不是每个 feature 独立 Store；因此仅关闭不符合当前架构的 feature-to-app 依赖方向和每 feature MVI 骨架规则，包路径、文件大小和语言资源检查继续启用；
+- 源码 composite 与本地 Maven marker 两种模式均通过 Quality、Lint、单测、Debug APK、Release APK 和 Release AAB；Maven 模式任务图不包含平台源码任务；
+- Consumer 实际解析到 Pulse 0.4.0，Gradle configuration cache 可以存储并复用；
+- Debug APK 已保留数据覆盖安装到真实设备，完成冷启动、首页渲染和通过真实点击进入设置页的状态切换；
+- Google Services 和 Crashlytics 等 App 级插件保留在 App module 的插件作用域。不要仅在根工程以 `apply false` 声明这类插件，否则其旧版传递构建依赖可能从父类加载器遮蔽平台的 AGP/bundletool 依赖；
+- 未从 MeloNest 提取 Ads、Consent、媒体或存储 runtime。单个新增 Consumer 仍不足以证明这些能力具有稳定共同语义。
 
 ### Phase 4：Factory 正式消费
 
@@ -225,18 +236,20 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 当前状态：
 
-- 平台 v0.1 骨架已实现并形成首个本地提交，但尚未推送或正式发布；
+- 平台 v0.1 骨架已推送到 public GitHub 远端，托管 CI 已通过，但尚未正式发布到 Maven Central；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合均已通过 clean、check 和 Debug APK 构建；
 - TickFloat 已完成 Application、Compose、Quality 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟；
+- MeloNest 已完成四插件、Pulse 0.4 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟，待用户验收；
 - 发布检查会自动断言一个实现 JAR、一个 sources JAR、四个 marker POM，且 marker 均指向同一实现版本；
 - Factory 尚未修改；
-- 平台尚无远端和发布版本，因此 GitHub 托管 CI 当前无法取得平台源码或制品；现阶段双模式验证均为本地证据。
+- 平台尚无稳定发布版本；真实 App 的 Maven marker 验证仍使用隔离的本地发布仓库。
 
 下一动作：
 
-1. 确定 GitHub 远端、开源许可证、Maven Central namespace、SCM 与开发者元数据；
-2. 在 SnapMosaic 活跃产品改动收口后进入 Phase 2，验证 Pulse 和大型多模块依赖边界；
-3. 一个非 Pulse App 和一个 Pulse App 都稳定接入后，再发布稳定版本并修改 Factory。
+1. 用户验收 MeloNest 迁移，再决定是否推送、创建 PR 和合并；
+2. 确定开源许可证、Maven Central namespace、签名、SCM 与开发者 POM 元数据，准备首个稳定版本；
+3. TickFloat 与 MeloNest 分别提供非 Pulse 和 Pulse Consumer 证据后，稳定版本不再被 SnapMosaic 试点阻塞；SnapMosaic 等活跃产品改动收口后仍可继续 Phase 2，用于扩大多模块规则证据；
+4. 首个稳定版本发布后再修改 Factory，并执行生成项目的端到端验收。
 
 ## 11. 新会话恢复顺序
 

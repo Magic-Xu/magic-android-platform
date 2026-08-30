@@ -81,6 +81,11 @@ android {
 }
 ```
 
+Declare Android app-specific build plugins, such as Google Services or Firebase Crashlytics, in the
+same module plugin block even when they are conditionally applied later. Do not keep them only in a
+root `plugins { ... apply false }` block: older transitive build dependencies in that parent plugin
+scope can shadow the platform's AGP and bundletool dependencies.
+
 After the first release, remove `includeBuild` and resolve the plugins from Maven Central with one
 shared version:
 
