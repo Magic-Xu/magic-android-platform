@@ -1,10 +1,13 @@
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.plugins.signing.SigningExtension
 
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
     `maven-publish`
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.vanniktech.maven.publish)
 }
 
 java {
@@ -66,6 +69,26 @@ publishing {
                 .toURI()
         }
     }
+}
+
+configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
+    coordinates(
+        providers.gradleProperty("GROUP").get(),
+        "magic-android-platform-gradle-plugin",
+        providers.gradleProperty("VERSION_NAME").get(),
+    )
+    publishToMavenCentral()
+    signAllPublications()
+}
+
+configure<SigningExtension> {
+    setRequired({
+        !project.version.toString().endsWith("-SNAPSHOT") &&
+            gradle.taskGraph.allTasks.any { task ->
+                task.name.startsWith("publish", ignoreCase = true) &&
+                    task.name.contains("MavenCentral", ignoreCase = true)
+            }
+    })
 }
 
 val cleanPublicationVerificationRepository by tasks.registering(Delete::class) {

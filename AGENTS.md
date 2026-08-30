@@ -20,7 +20,7 @@ product-specific architecture.
 - `magic-android-application`: Android application defaults only.
 - `magic-android-compose`: Compose build feature and Compose dependencies.
 - `magic-android-pulse`: Pulse Android and testing dependencies.
-- `magic-android-quality`: configurable repository quality checks.
+- `magic-android-quality`: mandatory repository quality checks with no per-rule exemptions.
 
 Plugins may depend on upstream Android and Kotlin build APIs. Product IDs, signing secrets, ad IDs,
 legal copy, application resources, navigation, and feature behavior remain in consumer apps.
@@ -39,8 +39,11 @@ legal copy, application resources, navigation, and feature behavior remain in co
 Before delivery run:
 
 ```bash
-./gradlew platformCheck publicationCheck
+./gradlew releaseCheck
 ./gradlew -p samples/smoke-app check assembleDebug
+./gradlew -p samples/smoke-app \
+  -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
+  clean check assembleDebug
 ```
 
 Also confirm production Kotlin files remain below 800 lines and the working tree contains no build

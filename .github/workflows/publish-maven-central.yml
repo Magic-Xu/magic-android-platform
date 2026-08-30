@@ -1,0 +1,196 @@
+name: Publish Maven Central
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+concurrency:
+  group: publish-maven-central-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.release-identity.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Verify stable release identity
+        id: release-identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "Maven Central publication requires a tag." >&2
+            exit 1
+          fi
+
+          tag_object_type="$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")"
+          if [[ "${tag_object_type}" != "tag" ]]; then
+            echo "The release ref must be an annotated tag, not a lightweight tag." >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          main_commit="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "${tag_commit}" != "${main_commit}" ]]; then
+            echo "Release tag must point to the exact origin/main HEAD." >&2
+            exit 1
+          fi
+
+          version="$(sed -n 's/^VERSION_NAME=//p' gradle.properties)"
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION_NAME must be a stable semantic version." >&2
+            exit 1
+          fi
+          if [[ "v${version}" != "${GITHUB_REF_NAME}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match VERSION_NAME=${version}." >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
+
+      - name: Run platform release gate
+        run: ./gradlew clean releaseCheck --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+
+      - name: Verify signed publication candidates
+        shell: bash
+        run: |
+          bash scripts/verify-publication-shape.sh \
+            build/publication-verification-repository \
+            io.github.magic-xu \
+            "${RELEASE_VERSION}" \
+            --require-signatures
+
+      - name: Build source-composite capability matrix
+        run: ./gradlew -p samples/smoke-app clean check assembleDebug
+
+      - name: Build staged-artifact capability matrix
+        run: |
+          ./gradlew -p samples/smoke-app \
+            -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
+            "-PmagicAndroidPlatformVersion=${RELEASE_VERSION}" \
+            clean check assembleDebug
+
+  publish:
+    needs: release-check
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RELEASE_VERSION: ${{ needs.release-check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+
+      - name: Publish and release to Maven Central
+        run: >-
+          ./gradlew
+          :gradle-plugin:publishAndReleaseToMavenCentral
+          --no-configuration-cache
+          --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+
+      - name: Wait for the public Maven Central release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_VERSION}"
+          base="https://repo.maven.apache.org/maven2"
+          implementation="magic-android-platform-gradle-plugin"
+          plugin_ids=(
+            "io.github.magic-xu.magic-android-application"
+            "io.github.magic-xu.magic-android-compose"
+            "io.github.magic-xu.magic-android-pulse"
+            "io.github.magic-xu.magic-android-quality"
+          )
+          files=(
+            "io/github/magic-xu/${implementation}/${version}/${implementation}-${version}.jar"
+            "io/github/magic-xu/${implementation}/${version}/${implementation}-${version}-sources.jar"
+            "io/github/magic-xu/${implementation}/${version}/${implementation}-${version}-javadoc.jar"
+            "io/github/magic-xu/${implementation}/${version}/${implementation}-${version}.module"
+            "io/github/magic-xu/${implementation}/${version}/${implementation}-${version}.pom"
+          )
+          for plugin_id in "${plugin_ids[@]}"; do
+            marker="${plugin_id}.gradle.plugin"
+            plugin_path="${plugin_id//.//}"
+            files+=("${plugin_path}/${marker}/${version}/${marker}-${version}.pom")
+          done
+
+          for attempt in $(seq 1 60); do
+            missing=()
+            for path in "${files[@]}"; do
+              if ! curl --fail --silent --head --output /dev/null "${base}/${path}"; then
+                missing+=("${path##*/}")
+              fi
+              if ! curl --fail --silent --head --output /dev/null "${base}/${path}.asc"; then
+                missing+=("${path##*/}.asc")
+              fi
+            done
+            if [[ ${#missing[@]} -eq 0 ]]; then
+              echo "All Magic Android Platform ${version} artifacts are public."
+              exit 0
+            fi
+            if [[ ${attempt} -eq 60 ]]; then
+              echo "Maven Central propagation timed out; missing: ${missing[*]}" >&2
+              exit 1
+            fi
+            echo "Waiting for Maven Central propagation (${attempt}/60): ${missing[*]}"
+            sleep 20
+          done
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Consume the public release without local platform sources
+        run: |
+          ./gradlew -p samples/smoke-app \
+            -PmagicAndroidPlatformRepositoryUrl=https://repo.maven.apache.org/maven2 \
+            "-PmagicAndroidPlatformVersion=${RELEASE_VERSION}" \
+            --refresh-dependencies \
+            clean check assembleDebug

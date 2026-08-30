@@ -2,11 +2,23 @@ pluginManagement {
     val magicAndroidPlatformRepositoryPath = providers
         .gradleProperty("magicAndroidPlatformRepositoryPath")
         .orNull
+    val magicAndroidPlatformRepositoryUrl = providers
+        .gradleProperty("magicAndroidPlatformRepositoryUrl")
+        .orNull
     val magicAndroidPlatformVersion = providers
         .gradleProperty("magicAndroidPlatformVersion")
-        .getOrElse("0.1.0-SNAPSHOT")
+        .getOrElse("1.0.0")
 
-    if (magicAndroidPlatformRepositoryPath == null) {
+    check(
+        listOfNotNull(
+            magicAndroidPlatformRepositoryPath,
+            magicAndroidPlatformRepositoryUrl,
+        ).size <= 1
+    ) {
+        "Use either magicAndroidPlatformRepositoryPath or magicAndroidPlatformRepositoryUrl, not both."
+    }
+
+    if (magicAndroidPlatformRepositoryPath == null && magicAndroidPlatformRepositoryUrl == null) {
         includeBuild("../..")
     }
 
@@ -15,6 +27,12 @@ pluginManagement {
             maven {
                 name = "magicAndroidPlatformVerification"
                 url = uri(magicAndroidPlatformRepositoryPath)
+            }
+        }
+        if (magicAndroidPlatformRepositoryUrl != null) {
+            maven {
+                name = "magicAndroidPlatformPublic"
+                url = uri(magicAndroidPlatformRepositoryUrl)
             }
         }
         google {
