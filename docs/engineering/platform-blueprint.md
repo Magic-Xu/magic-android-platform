@@ -261,8 +261,9 @@ Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器�
 
 当前状态：
 
-- 平台 v1.0 候选已具备 public GitHub 远端、完整 POM、Dokka Javadoc、本地 GPG 签名验证和
-  带门禁的 annotated-tag 发布流程；准确候选提交的托管 CI 与 Maven Central 正式发布仍待完成；
+- 平台 v1.0 候选已合入 public GitHub `main`；完整 POM、Dokka Javadoc、本地 GPG
+  签名验证、带门禁的 annotated-tag 发布流程及准确 `main` 提交的托管 CI 均已完成，
+  Maven Central 正式发布仍待完成；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合均已通过 clean、check 和 Debug APK 构建；
 - TickFloat 已完成 Application、Compose、Quality 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟；
 - MeloNest 已完成四插件、Pulse 0.4 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟，用户已确认接入成功；
@@ -275,8 +276,8 @@ Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器�
 下一动作：
 
 1. 为平台仓库配置独立 Central Token，并复用同一发布者 GPG 身份；
-2. 将保持 `VERSION_NAME=1.0.0` 并通过完整本地门禁和 CI 的准确提交合入主干，创建指向
-   远端 `main` 准确 HEAD 的 Annotated Tag `v1.0.0`；
+2. 确认四个 GitHub Actions Secrets 配置完成后，创建指向远端 `main` 准确 HEAD 的
+   Annotated Tag `v1.0.0`；
 3. 等待发布 Workflow 验证全部公共制品及 Central-only Smoke App；
 4. 发布平台 `1.0.0` 后，以真实 Maven Central 坐标重跑 MeloNest 与 Factory 端到端验收，
    再提交对应 Consumer 分支；
