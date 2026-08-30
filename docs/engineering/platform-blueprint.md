@@ -33,10 +33,10 @@ Factory 是入口，Platform 是持续演进的工程底座，Pulse 是状态运
 3. 逻辑组件不等于 Maven 组件。没有独立版本诉求，就不拆独立制品。
 4. 平台提供默认值，App 继续使用标准 Android Gradle DSL 覆盖自身身份和特殊配置。
 5. 先用真实 App 证明价值，再扩展平台；没有两个真实消费者的稳定共同语义，不新增 runtime library。
-6. 平台迁移与产品重构分开进行，确保问题来源和回滚边界清晰。
+6. 平台接入可以分提交定位问题，但最终接入不允许关闭质量规则；Consumer 不达标时改造 Consumer。
 7. 本地 composite build 用于开发验证；生成的新 App 最终只依赖已发布的稳定版本。
 
-## 4. v0.1 边界
+## 4. v1.0 首发边界
 
 首版只发布一个 Gradle 插件实现制品，并暴露四个可独立启用的插件：
 
@@ -50,9 +50,9 @@ Factory 是入口，Platform 是持续演进的工程底座，Pulse 是状态运
 - Application：SDK、Java、release shrinking、packaging 和基础 Android 依赖默认值；
 - Compose：Compose 编译插件、build feature 和 Compose 依赖基线；
 - Pulse：Pulse Android Compose 与测试依赖；
-- Quality：包路径、依赖方向、页面 MVI 骨架、文件大小和语言资源 key 一致性。
+- Quality：强制包路径、依赖方向、feature UI 系统/IO 边界、页面 MVI 骨架、生产 Kotlin 文件不超过 400 行和语言资源 key 一致性；没有规则关闭或阈值放宽入口。
 
-v0.1 明确不包含：
+v1.0 明确不包含：
 
 - 广告、Consent、Analytics、Billing、Firebase；
 - 媒体选择、图片或视频处理；
@@ -64,14 +64,16 @@ v0.1 明确不包含：
 
 源代码仓库是独立的 `magic-android-platform`。本文中的相对路径均以该仓库根目录为基准。
 
-生产发布目标是 Maven Central。v0.1 的发布形态为：
+生产发布目标是 Maven Central。v1.0 的发布形态为：
 
 - 一个实现 JAR：`io.github.magic-xu:magic-android-platform-gradle-plugin`；
 - 四个很小的 Gradle plugin marker POM；
 - 所有插件 ID 使用同一个平台版本；
 - 一次构建、一次验证、一次发布，不分别维护组件版本。
 
-首次正式发布前仍需确定 GitHub 远端、开源许可证、Maven Central namespace、签名和发布凭据。凭据不得进入仓库。
+GitHub public 远端已经建立；Apache-2.0、`io.github.magic-xu` namespace、POM 元数据和
+同一发布者 GPG 身份已经确定。正式发布使用平台仓库独立的 Central Token 和 GitHub
+Actions Secrets，凭据不得进入仓库。
 
 ## 6. 使用方式
 
@@ -167,7 +169,7 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 ### Phase 3：MeloNest 迁移
 
-前提：当前大规模 UI/Pulse 改造收口，工作区恢复清晰；Pulse 版本迁移与平台接入不能混在一个不可回滚的大改中。
+状态：已在基于最新 `origin/main` 的独立迁移分支完成无豁免架构改造；源码 composite、隔离 Maven marker、完整制品和真实设备回归均已通过，用户已确认接入成功。
 
 目标：
 
@@ -175,9 +177,39 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 - 判断哪些广告、Consent、媒体或存储能力在两个以上 App 中已经形成稳定共同语义；
 - 只记录真正可复用的候选项，不立即拆 runtime artifact。
 
+已完成证据：
+
+- 平台接管 Pulse 0.4 后，将原有单一根 Store 改造成 App 路由 Store 与各 feature 独立 Store；
+- Application、Compose、Pulse、Quality 四个插件均已启用，MeloNest 的 Android 36.1、minSdk 29、Firebase、AdMob、测试依赖和不启用 release shrinking 的产品选择继续由 App 持有；
+- App Store 只持有路由，业务 State/Intent/Effect/ViewModel 归对应 feature；跨 feature 编排位于 App effect 层，共享业务状态位于 domain coordinator；
+- `app -> feature -> domain -> core`、feature 隔离、MVI 骨架、locale parity 和 400 行上限全部启用且不可关闭；
+- 源码 composite 已通过 Quality、主代码/单测/仪器测试编译、Debug 单测、Lint、Debug/Release APK 和 Release AAB；
+- 隔离 Maven marker 模式已通过 Quality、Debug 单测和 Debug APK，任务图不依赖 platform 源码；
+- Consumer 实际解析到 Pulse 0.4.0，Gradle configuration cache 可以存储并复用；
+- Debug APK 已保留数据覆盖安装到真实设备，完成冷启动、首页渲染，并通过真实点击验证 Library 到 Settings 和 Create 的跨 feature 路由；进程日志无致命异常；
+- Google Services 和 Crashlytics 等 App 级插件保留在 App module 的插件作用域。不要仅在根工程以 `apply false` 声明这类插件，否则其旧版传递构建依赖可能从父类加载器遮蔽平台的 AGP/bundletool 依赖；
+- 未从 MeloNest 提取 Ads、Consent、媒体或存储 runtime。单个新增 Consumer 仍不足以证明这些能力具有稳定共同语义。
+
+### Phase 3B：PetMood 迁移
+
+状态：已在独立迁移分支完成四插件无豁免改造；源码 composite 和隔离 Maven marker 均从 clean 状态通过质量门、单测、Lint、Debug/Release APK 与 Release AAB。
+
+已完成证据：
+
+- 将认证、首页、相册、结果和个人页拆为 feature-owned Pulse Store，App Store 仅持有路由；相机、相册选择、Toast 和分享位于 App effect/UI route，Firebase、广告、网络与文件能力位于 core gateway 或 feature data；
+- 清除 feature UI 中 Activity Result、`FileProvider`、`Context`、网络和 IO 依赖，并将这个真实缺口固化为平台不可关闭的 `ui-platform-boundary` 规则及正反契约测试；
+- 仅独立页面使用 `Screen` 命名，加载等附属视觉状态使用 `Content`，避免把非页面组件伪装成 MVI 页面；
+- Google Maven 在插件仓库和依赖仓库两处都按 Android/Google/AndroidX group 限流；同一问题已反向修复 Factory 生成器和验证器；
+- 源码 composite 模式通过 Quality、Debug 单测、Lint、Debug/Release APK 和 Release AAB；
+- 隔离 Maven marker 模式从 clean 状态通过同一完整任务集，任务图不包含平台源码任务；
+- 旧源码中的第三方 API key 已改为环境变量注入且不再出现在当前源码，但曾进入 Git 历史的凭据仍必须轮换；
+- Release APK/AAB 产物可以生成但保持未签名；release signing 继续由 App 持有，不能由平台或 Factory 伪造默认签名。
+
 ### Phase 4：Factory 正式消费
 
 前提：至少 TickFloat 和一个 Pulse App 完成真实迁移，平台 API 和迁移方式稳定。
+
+状态：Factory 权威生成器已在独立分支完成终态改造，并通过本地 composite 的端到端生成验收；PetMood 反馈的依赖仓库限流、页面命名和 feature UI 系统能力边界已反向固化。在平台 `1.0.0` 发布前不能作为可用模板合入或交付。
 
 动作：
 
@@ -185,6 +217,10 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 - 修改 Magic App Dev 插件中的 canonical Android App Factory 模板；
 - Factory 生成的 App 使用已发布平台版本，不使用本机 sibling path；
 - 更新 Factory acceptance sample 并执行端到端生成验证。
+
+Factory 固定 Application、Compose、Pulse、Quality 四个插件的同一稳定版本，生成 feature-owned
+Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器拒绝 `0.x`、snapshot 和
+本机路径；本地 `--platform-source` 仅供临时验收解析，不写入生成仓库。
 
 ### Phase 5：按证据扩展 runtime
 
@@ -195,8 +231,8 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 1. 只读记录接入前的分支、工作区、构建和测试结果。
 2. 禁止在 `main/master` 直接修改；从最新主干创建平台迁移分支。
 3. 先使用 composite build，应用需要的插件，不立即发布快照。
-4. 第一次提交只做构建层接入和等价去重，不做产品重构。
-5. 对 Quality 误报先判断规则是否通用；不能用产品特例掩盖平台缺陷。
+4. 可以先隔离构建层变化便于诊断；如果 App 不满足平台架构，必须在接入分支继续重构直到全部门禁通过。
+5. Quality 规则无关闭入口。误报应修复平台的通用分析逻辑，真实违规应修复 Consumer，不能写产品特例。
 6. 运行 App 原有测试、`check`、`assembleDebug` 和适用的关键 UI 流程。
 7. 记录平台接管的配置、Consumer 保留的覆盖项、发现的缺口和回滚方式。
 8. 用户验收后才能进入 PR、合并和下一 App。
@@ -225,18 +261,26 @@ SnapMosaic 不作为首个试点，因为它规模大且当前有活跃功能改
 
 当前状态：
 
-- 平台 v0.1 骨架已实现并形成首个本地提交，但尚未推送或正式发布；
+- 平台 v1.0 候选已具备 public GitHub 远端、完整 POM、Dokka Javadoc、本地 GPG 签名验证和
+  带门禁的 annotated-tag 发布流程；准确候选提交的托管 CI 与 Maven Central 正式发布仍待完成；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合均已通过 clean、check 和 Debug APK 构建；
 - TickFloat 已完成 Application、Compose、Quality 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟；
-- 发布检查会自动断言一个实现 JAR、一个 sources JAR、四个 marker POM，且 marker 均指向同一实现版本；
-- Factory 尚未修改；
-- 平台尚无远端和发布版本，因此 GitHub 托管 CI 当前无法取得平台源码或制品；现阶段双模式验证均为本地证据。
+- MeloNest 已完成四插件、Pulse 0.4 的源码与 Maven 制品双模式迁移，并通过完整构建和设备冒烟，用户已确认接入成功；
+- PetMood 已完成五个 feature-owned Store、App effect 边界和四插件迁移；源码 composite 与隔离 Maven marker 均通过完整质量、测试、Lint 和打包闭环；
+- 发布检查会自动断言一个实现 JAR、sources、Dokka javadocs、Gradle metadata、完整实现
+  POM、四个 marker POM 和正式候选签名，且 marker 均指向同一实现版本；
+- Factory 终态模板已在独立分支通过本地端到端验收及 Google 依赖仓库负向门禁，但等待平台 `1.0.0` 发布后才能形成可用交付；
+- 平台尚无稳定发布版本；真实 App 的 Maven marker 验证仍使用隔离的本地发布仓库。
 
 下一动作：
 
-1. 确定 GitHub 远端、开源许可证、Maven Central namespace、SCM 与开发者元数据；
-2. 在 SnapMosaic 活跃产品改动收口后进入 Phase 2，验证 Pulse 和大型多模块依赖边界；
-3. 一个非 Pulse App 和一个 Pulse App 都稳定接入后，再发布稳定版本并修改 Factory。
+1. 为平台仓库配置独立 Central Token，并复用同一发布者 GPG 身份；
+2. 将保持 `VERSION_NAME=1.0.0` 并通过完整本地门禁和 CI 的准确提交合入主干，创建指向
+   远端 `main` 准确 HEAD 的 Annotated Tag `v1.0.0`；
+3. 等待发布 Workflow 验证全部公共制品及 Central-only Smoke App；
+4. 发布平台 `1.0.0` 后，以真实 Maven Central 坐标重跑 MeloNest 与 Factory 端到端验收，
+   再提交对应 Consumer 分支；
+5. 轮换曾进入 PetMood Git 历史的第三方 API key，并只通过本地环境或 CI secret 提供新值。
 
 ## 11. 新会话恢复顺序
 

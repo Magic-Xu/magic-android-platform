@@ -16,8 +16,9 @@ The repository contains two Gradle builds:
   transitive build dependencies, Android configuration, Pulse, Compose, and quality tasks.
 
 `publicationCheck` publishes the implementation and all marker publications into an ignored,
-build-local Maven repository. It verifies that the complete publication graph can be produced
-without external credentials or changes to a developer's Maven Local cache.
+build-local Maven repository. It verifies the implementation binary, sources, Dokka javadocs,
+Gradle metadata, complete POM metadata, and the four marker dependencies without changing a
+developer's Maven Local cache.
 
 The smoke app is not included as a root subproject. This prevents it from passing only because it
 can see implementation projects directly.
@@ -54,12 +55,13 @@ Registers `magicQualityCheck` and attaches it to the consumer's `check` lifecycl
 - Kotlin package and source-directory agreement
 - `app -> feature -> domain -> core` dependency direction
 - sibling feature isolation
+- feature UI isolation from Android system, Activity Result, IO, network, and Firebase APIs
 - the `Contract / ViewModel / Screen` page skeleton
-- production Kotlin file size
+- production Kotlin files are limited to 400 lines
 - string-resource key parity across declared locale directories
 
-Each semantic rule is configurable so an existing app can migrate incrementally without changing
-the baseline for new apps.
+These checks form one non-configurable standard. Applying the Quality plugin means accepting every
+rule; existing apps are refactored to comply instead of weakening the baseline.
 
 ## Future runtime artifacts
 
@@ -70,9 +72,9 @@ not automatically become Maven artifacts.
 ## Publication boundary
 
 `io.github.magic-xu:magic-android-platform-gradle-plugin` is the only implementation artifact in
-the first release. Gradle also publishes one small marker POM per plugin ID so the plugins DSL can
-resolve each capability. Those markers point to the same implementation JAR; they are not
-separately maintained components.
+the first release. Gradle also publishes one small signed marker POM per plugin ID so the plugins
+DSL can resolve each capability. Those markers point to the same signed implementation JAR; they
+are not separately maintained components.
 
 All plugin IDs and future runtime artifacts use one repository version and one release operation.
 Maven Central is the binary distribution boundary. The App Factory is a consumer that selects the

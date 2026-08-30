@@ -1,6 +1,18 @@
 .gradle/
+.kotlin/
+**/.kotlin/
 .idea/
 **/build/
 local.properties
 *.iml
 .DS_Store
+
+# Local publishing credentials
+/gradle/maven-central-secrets.properties
+/gradle/maven-central-secrets.local.properties
+/signing.properties
+/.env
+/.env.local
+/.env.*.local
+*.jks
+*.keystore
