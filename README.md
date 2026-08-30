@@ -1,5 +1,7 @@
 # Magic Android Platform
 
+English | [简体中文](README.zh-CN.md)
+
 Shared Gradle conventions and quality gates for Magic Android apps.
 
 The platform keeps Android, Compose, Pulse, and repository checks independently selectable. Product
