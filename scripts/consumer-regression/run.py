@@ -83,13 +83,13 @@ def preflight(args, matrix):
             raise VerificationError("Requested adb device is not ready")
 
 
-def gradle(evidence, stage, root, tasks, config=None, extra=()):
-    command = ["./gradlew", "--console=plain", "--no-daemon"]
+def gradle(evidence, stage, root, tasks, config=None, extra=(), wrapper=None):
+    command = [str(wrapper or root / "gradlew"), "--console=plain", "--no-daemon"]
     if config:
         config = dict(config, resolutionDirectory=str(evidence.output / "resolution" / stage))
         config_path = evidence.output / (stage + "-config.json")
         config_path.write_text(json.dumps(config))
-        command += ["--no-configuration-cache", "--init-script", str(HERE / "verify.init.gradle"),
+        command += ["--no-configuration-cache", "--init-script", str(evidence.output / "runner/verify.init.gradle"),
                     "-Dplatform.consumer.config=" + str(config_path)]
     evidence.run(stage, command + list(extra) + tasks, root)
     if config:
@@ -200,8 +200,7 @@ def verify(args, matrix, evidence):
         pulse_repository = (pulse / "build/staging-repo").as_uri()
     config = dict(platformVersion=platform_version, pulseVersion=pulse_version, pulseRepository=pulse_repository)
     evidence.data.update(platformVersion=platform_version, pulseVersion=pulse_version,
-                         platformDeclaredPulse=pulse_versions[0], matrixSha256=digest(args.matrix),
-                         runnerSha256=digest(Path(__file__)), initScriptSha256=digest(HERE / "verify.init.gradle"))
+                         platformDeclaredPulse=pulse_versions[0])
     evidence.save()
     smoke = platform / "samples/smoke-app"
     smoke_tasks = ["check", "assembleDebug", "verifyPlatformConsumerResolution"]
@@ -209,13 +208,15 @@ def verify(args, matrix, evidence):
         gradle(evidence, "platform-release", platform, ["releaseCheck"])
         repository = platform / "build/publication-verification-repository"
         config["platformRepository"] = repository.as_uri()
-        gradle(evidence, "smoke-source", smoke, smoke_tasks, dict(config, compositeSmoke=True))
+        gradle(evidence, "smoke-source", smoke, smoke_tasks, dict(config, compositeSmoke=True), wrapper=platform / "gradlew")
         gradle(evidence, "smoke-staged", smoke, ["clean", *smoke_tasks], config,
-               ["-PmagicAndroidPlatformRepositoryPath=" + str(repository), "-PmagicAndroidPlatformVersion=" + platform_version])
+               ["-PmagicAndroidPlatformRepositoryPath=" + str(repository), "-PmagicAndroidPlatformVersion=" + platform_version],
+               wrapper=platform / "gradlew")
     else:
         config["platformRepository"] = CENTRAL
         gradle(evidence, "smoke-public", smoke, smoke_tasks, config,
-               ["-PmagicAndroidPlatformRepositoryUrl=" + CENTRAL, "-PmagicAndroidPlatformVersion=" + platform_version])
+               ["-PmagicAndroidPlatformRepositoryUrl=" + CENTRAL, "-PmagicAndroidPlatformVersion=" + platform_version],
+               wrapper=platform / "gradlew")
     build_factory(evidence, args, matrix, config)
     if args.device:
         adb = [args.adb, "-s", args.device, "shell", "getprop"]
@@ -235,6 +236,13 @@ def main():
         matrix = load_matrix(args.matrix)
         preflight(args, matrix)
         evidence = Evidence(args.output, args.mode)
+        runner = evidence.output / "runner"
+        runner.mkdir()
+        for source in (Path(__file__), HERE / "evidence.py", HERE / "verify.init.gradle"):
+            (runner / source.name).write_bytes(source.read_bytes())
+        (runner / "matrix.json").write_text(json.dumps(matrix, indent=2) + "\n")
+        evidence.data["toolSha256"] = {path.name: digest(path) for path in sorted(runner.iterdir())}
+        evidence.save()
         verify(args, matrix, evidence)
         evidence.finish("passed_selected_gates")
         print(f"Verified; report: {args.output / 'summary.md'}")
