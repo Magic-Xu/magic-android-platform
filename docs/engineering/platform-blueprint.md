@@ -306,16 +306,19 @@ SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
 
 当前状态：
 
-- 当前源码目标为候选版 `1.2.0`，将 Compose 和 Android Split 测试制品同时升级到 Pulse `0.5.0`；
+- 当前稳定平台版本为 `1.2.0`，Compose 和 Android Split 测试制品均为 Pulse `0.5.0`；
   准入反馈、真实 ViewModel 测试及四个可选插件的职责保持一致；
 - `1.2.0` 已通过插件发布门禁、源码与暂存 Smoke、配置缓存复用、Factory 全新工作区，以及
   MeloNest 完整构建和三项真机回归；这些消费者已使用公开 Pulse `0.5.0`；
-- 平台 `1.1.0` 已发布到 Maven Central；签名、marker 和 Central-only Smoke App 均通过
-  [发布验证](https://github.com/Magic-Xu/magic-android-platform/actions/runs/34131920090)；
+- 平台 `1.2.0` 已发布到 Maven Central；签名、marker 和 Central-only Smoke App 均通过
+  [发布验证](https://github.com/Magic-Xu/magic-android-platform/actions/runs/34139011280)；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合持续覆盖源码和发布制品；
-- MeloNest 已将 Platform `1.1.0`、Pulse `0.4.0` 的输入交付和观察任务生命周期改动合入主干，
-  完整构建、真实 Store 单测与真机回归通过，是当前真实 Consumer 参考；
-- Factory 已用公开 `1.1.0` 通过全新生成验证，并经独立默认值变更及 PR CI 合入主干；
+- MeloNest 的输入交付和观察任务生命周期改动已合入主干；随后以公开 Platform `1.2.0`、
+  Pulse `0.5.0` 完成完整构建并[合入主干](https://github.com/Magic-Xu/MeloNest/pull/24)，
+  真实 Store 单测与真机回归通过，是当前真实 Consumer 参考；
+- Factory 已用公开 `1.2.0` 通过[全新生成验证](https://github.com/Magic-Xu/magic-app-dev-plugin/actions/runs/34140485590)，
+  默认版本通过[独立变更](https://github.com/Magic-Xu/magic-app-dev-plugin/pull/13)及 PR CI 合入主干；
+  Magic App Dev `0.4.2` 的正常生成默认使用 Platform `1.2.0`；
 - TickFloat 和 PetMood 已完成各自的历史验证使命，但产品将废弃，不再承担平台后续演进的
   长期参考 Consumer；
 - 后续稳定验证基线由 Platform Smoke App、Factory 全新生成 CI 和 MeloNest 真实消费共同组成。

@@ -18,10 +18,12 @@ POM metadata, and signatures. All plugin IDs share the same platform version and
 together.
 
 The source belongs in the independent `magic-android-platform` Git repository. Released plugin
-artifacts belong in Maven Central. This source targets candidate version `1.2.0`, promoting the
-Compose and Android Split testing dependencies together to Pulse `0.5.0`. Published `1.1.0` remains the stable baseline until release
-verification completes. The Android App Factory promotes its default separately
-after validating a newly generated workspace against the public release.
+artifacts belong in Maven Central. Stable version `1.2.0` is published, with the Compose and Android
+Split testing dependencies aligned on Pulse `0.5.0`. Its signed publication, all four plugin markers,
+and consumption without local platform sources passed the
+[release workflow](https://github.com/Magic-Xu/magic-android-platform/actions/runs/34139011280).
+The Android App Factory promotes its default separately after validating a newly generated
+workspace against the public release.
 
 Pulse 0.5 adds precise mutation outcomes and bounded Split diagnostics while retaining the Boolean
 mutation methods. See its [release notes](https://github.com/Magic-Xu/pulse/blob/master/docs/RELEASE_NOTES_0.5.0.md)
@@ -67,10 +69,10 @@ four in the root build; a consumer that does not need a capability may omit its 
 ```kotlin
 // Root build.gradle.kts
 plugins {
-    id("io.github.magic-xu.magic-android-application") version "1.1.0" apply false
-    id("io.github.magic-xu.magic-android-compose") version "1.1.0" apply false
-    id("io.github.magic-xu.magic-android-pulse") version "1.1.0" apply false
-    id("io.github.magic-xu.magic-android-quality") version "1.1.0" apply false
+    id("io.github.magic-xu.magic-android-application") version "1.2.0" apply false
+    id("io.github.magic-xu.magic-android-compose") version "1.2.0" apply false
+    id("io.github.magic-xu.magic-android-pulse") version "1.2.0" apply false
+    id("io.github.magic-xu.magic-android-quality") version "1.2.0" apply false
 }
 ```
 
