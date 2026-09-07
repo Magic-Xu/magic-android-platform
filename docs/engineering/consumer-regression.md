@@ -40,6 +40,9 @@ Use `--adb /path/to/adb` if adb is not on `PATH`.
 classes on that serial. It stops the app before instrumentation. It does not uninstall apps or
 clear their data; tests can exercise and alter app state, so use a development device. A signing
 mismatch fails the run. Omitting the device leaves coverage explicitly `not_requested`.
+Some OEM installers require device confirmation even for adb installation. Record that provisioning
+assistance separately from the app tests; use a device that permits unattended installation when
+running without an operator. The runner does not change device security settings.
 
 ## What a successful run proves
 
