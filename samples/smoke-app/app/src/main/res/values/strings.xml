@@ -4,4 +4,5 @@
     <string name="interaction_count">Interactions: %1$d</string>
     <string name="platform_ready">Platform plugins are active.</string>
     <string name="primary_action">Verify interaction</string>
+    <string name="input_not_accepted">Action not accepted. Please try again.</string>
 </resources>

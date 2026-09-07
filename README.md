@@ -18,8 +18,9 @@ POM metadata, and signatures. All plugin IDs share the same platform version and
 together.
 
 The source belongs in the independent `magic-android-platform` Git repository. Released plugin
-artifacts belong in Maven Central. Version `1.0.0` is the current stable release and the Android App
-Factory's tested default.
+artifacts belong in Maven Central. This source targets version `1.1.0`, retaining Pulse `0.4.0`
+and adding the Android Split testing baseline. The Android App Factory promotes its default separately
+after validating a newly generated workspace against the public release.
 
 ## Use the released platform
 
@@ -61,10 +62,10 @@ four in the root build; a consumer that does not need a capability may omit its 
 ```kotlin
 // Root build.gradle.kts
 plugins {
-    id("io.github.magic-xu.magic-android-application") version "1.0.0" apply false
-    id("io.github.magic-xu.magic-android-compose") version "1.0.0" apply false
-    id("io.github.magic-xu.magic-android-pulse") version "1.0.0" apply false
-    id("io.github.magic-xu.magic-android-quality") version "1.0.0" apply false
+    id("io.github.magic-xu.magic-android-application") version "1.1.0" apply false
+    id("io.github.magic-xu.magic-android-compose") version "1.1.0" apply false
+    id("io.github.magic-xu.magic-android-pulse") version "1.1.0" apply false
+    id("io.github.magic-xu.magic-android-quality") version "1.1.0" apply false
 }
 ```
 

@@ -4,4 +4,5 @@
     <string name="interaction_count">交互次数：%1$d</string>
     <string name="platform_ready">平台插件已生效。</string>
     <string name="primary_action">验证交互</string>
+    <string name="input_not_accepted">操作未接收，请重试。</string>
 </resources>

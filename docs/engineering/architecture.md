@@ -45,8 +45,16 @@ Android application or Android library and does not apply the application plugin
 
 ### Pulse
 
-Adds Pulse Android Compose and testing artifacts after an Android application or library plugin is
-present. It does not force apps that use a different state container to adopt Pulse.
+Adds Pulse Android Compose and Android Split testing artifacts after an Android application or
+library plugin is present. The test dependency also exposes the core testing harness. Real ViewModel
+tests can exercise input admission, executor, mutation reducer, and lifecycle closure with
+`runPulseSplitTest`; a reducer-only test does not cover that path. It does not force apps that use a
+different state container to adopt Pulse.
+
+The full Smoke App exposes `EnqueueResult` from its UI callback. Its route handles Full and Rejected
+with local retry feedback and clears that feedback after successful admission. It does not create a
+new suspended coroutine for each callback. The test fixture checks successful dispatch, a saturated
+mailbox, recovery after draining, and rejection after closure against the real ViewModel.
 
 ### Quality
 
