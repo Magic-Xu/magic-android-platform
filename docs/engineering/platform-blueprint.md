@@ -159,18 +159,22 @@ Phase 1 只接入：
 - `translatable="false"` 默认资源不再被错误要求出现在各语言目录，并有平台契约测试覆盖；
 - 平台源码未引入 TickFloat 包名、权限、产品模型或其他 Consumer 特例。
 
-### Phase 2：SnapMosaic 潜在高价值 Consumer
+### Phase 2：SnapMosaic 生产 Consumer
 
-状态：暂不推进。只有 SnapMosaic 的产品开发明确需要接入，或平台变更需要大型在维护产品提供
-额外证据时，才创建独立迁移分支。
+状态：已接入公开 Platform `1.2.0` 与 Pulse `0.5.0`，四插件迁移通过
+[PR #119](https://github.com/Magic-Xu/SnapMosaic/pull/119) 合入主干 `679909c`。
 
-目标：
+已完成证据：
 
-- 接入 Application、Compose、Pulse、Quality 全部四个插件；
-- 验证 Pulse 0.4、MVI 页面骨架和 `app -> feature -> domain -> core` 依赖规则；
-- 对比平台门禁与现有仓库规范，修复平台的通用问题，不为单个产品写特例。
+- Application、Compose、Pulse、Quality 全部启用，337 个生产 Kotlin 文件均低于 400 行；
+- 540 项单测、Android 14 上 55 项设备测试通过，覆盖原有核心流程、迁移行为与视频导出；
+- Debug、签名 Release APK、Release AAB 通过；签名身份、版本、Manifest 与 R8 保持迁移约束；
+- 保留数据升级验证通过，12 项偏好和语言设置保持；
+- App 继续持有业务输入排序、分享交接、支付与视频观察的生命周期。短时输入回归已通过，
+  持续输入负载的内存与延迟边界仍需专项验证，不能由本次迁移验收推断。
 
-不为补验证数量提前迁移，不让平台演进干扰当前产品开发。
+SnapMosaic 与 MeloNest 共同承担后续真实 Consumer 回归；固定版本和选定测试由
+[消费回归矩阵](../../scripts/consumer-regression/matrix.json) 维护。
 
 ### Phase 3：MeloNest 迁移
 
@@ -318,10 +322,13 @@ SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
   真实 Store 单测与真机回归通过，是当前真实 Consumer 参考；
 - Factory 已用公开 `1.2.0` 通过[全新生成验证](https://github.com/Magic-Xu/magic-app-dev-plugin/actions/runs/34140485590)，
   默认版本通过[独立变更](https://github.com/Magic-Xu/magic-app-dev-plugin/pull/13)及 PR CI 合入主干；
-  Magic App Dev `0.4.2` 的正常生成默认使用 Platform `1.2.0`；
+  当前正常生成默认使用 Platform `1.2.0`；
+- SnapMosaic 已完成公开 Platform `1.2.0`、Pulse `0.5.0` 迁移并合入主干，承担媒体编辑、
+  分享交接、支付观察与 Release/R8 场景的生产 Consumer 验证；
 - TickFloat 和 PetMood 已完成各自的历史验证使命，但产品将废弃，不再承担平台后续演进的
   长期参考 Consumer；
-- 后续稳定验证基线由 Platform Smoke App、Factory 全新生成 CI 和 MeloNest 真实消费共同组成。
+- 稳定验证基线由 Platform Smoke App、Factory 全新生成、SnapMosaic 与 MeloNest 共同组成；
+  [统一回归入口](consumer-regression.md) 固定提交并验证暂存或公开制品，输出依赖、构建及设备证据。
 
 下一动作：
 
@@ -329,10 +336,10 @@ SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
    匹配证据，不为补场景数量制造无产品价值的功能；
 2. Factory 继续持有已完整验证的稳定平台版本；发布后先执行候选版本的全新生成验证，
    再通过独立变更提升默认值，并由 PR CI 重新验证；
-3. 平台变更依次通过插件契约与 Smoke App、Factory 全新生成、MeloNest 真实场景验证；
+3. Platform/Pulse 候选版本通过统一回归入口，依次验证插件契约与 Smoke App、Factory 全新
+   生成、SnapMosaic 和 MeloNest；设备覆盖根据实际变更风险补足；
 4. 仓库布局的通用部分只有在多个仍维护 App 证明为稳定共享不变量后才进入 Platform Quality；
-5. 只有两个仍维护的真实 App 形成相同语义、生命周期和测试契约时，才新增 runtime library；
-6. SnapMosaic 在产品确有接入需求时再评估，不为凑验证数量提前迁移。
+5. 只有两个仍维护的真实 App 形成相同语义、生命周期和测试契约时，才新增 runtime library。
 
 ## 11. 新会话恢复顺序
 

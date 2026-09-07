@@ -1,0 +1,127 @@
+// Verification-only overrides. The runner keeps this script outside consumer source trees.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+def config = new JsonSlurper().parse(new File(System.getProperty('platform.consumer.config')))
+def pulseModules = ['mvi-core-contract', 'mvi-core-runtime', 'mvi-platform-android',
+                    'mvi-platform-android-compose', 'mvi-platform-android-testing',
+                    'mvi-extensions', 'mvi-testing']
+def pluginIds = ['application', 'compose', 'pulse', 'quality'].collect {
+    'io.github.magic-xu.magic-android-' + it
+}
+def sha256 = { File file ->
+    def digest = MessageDigest.getInstance('SHA-256')
+    file.withInputStream { input ->
+        byte[] buffer = new byte[65536]
+        int size
+        while ((size = input.read(buffer)) != -1) digest.update(buffer, 0, size)
+    }
+    digest.digest().encodeHex().toString()
+}
+
+beforeSettings { settings ->
+    settings.pluginManagement {
+        resolutionStrategy.eachPlugin {
+            if (pluginIds.contains(requested.id.id)) useVersion(config.platformVersion)
+        }
+        repositories {
+            exclusiveContent {
+                forRepository {
+                    maven { name = 'PlatformConsumerCandidate'; url = uri(config.platformRepository) }
+                }
+                filter {
+                    includeModule('io.github.magic-xu', 'magic-android-platform-gradle-plugin')
+                    pluginIds.each { includeModule(it, it + '.gradle.plugin') }
+                }
+            }
+        }
+    }
+}
+settingsEvaluated { settings ->
+    settings.dependencyResolutionManagement.repositories {
+        exclusiveContent {
+            forRepository {
+                maven { name = 'PulseConsumerCandidate'; url = uri(config.pulseRepository) }
+            }
+            filter { pulseModules.each { includeModule('io.github.magic-xu', it) } }
+        }
+    }
+}
+allprojects { project ->
+    configurations.configureEach {
+        resolutionStrategy.eachDependency {
+            if (requested.group == 'io.github.magic-xu' && pulseModules.contains(requested.name)) {
+                useVersion(config.pulseVersion)
+                because('Verify one explicit Pulse candidate across all Android variants')
+            }
+        }
+    }
+    // Release binaries and local R8 mapping are built; this verification never uploads mapping.
+    tasks.configureEach {
+        if (name.startsWith('uploadCrashlyticsMappingFile')) enabled = false
+    }
+    plugins.withId('com.android.application') {
+        tasks.register('verifyPlatformConsumerResolution') {
+            doLast {
+                def hasPulse = project.plugins.hasPlugin('io.github.magic-xu.magic-android-pulse')
+                def variants = [:]
+                ['debugRuntimeClasspath', 'releaseRuntimeClasspath',
+                 'debugUnitTestRuntimeClasspath', 'debugAndroidTestRuntimeClasspath'].each { name ->
+                    def resolved = project.configurations.getByName(name).resolvedConfiguration.resolvedArtifacts
+                    def artifacts = resolved.findAll {
+                        it.moduleVersion.id.group == 'io.github.magic-xu' && pulseModules.contains(it.name)
+                    }.collect { artifact ->
+                        assert artifact.moduleVersion.id.version == config.pulseVersion
+                        if (config.pulseRepository.startsWith('file:')) {
+                            def expected = new File(new File(new URI(config.pulseRepository)),
+                                "io/github/magic-xu/${artifact.name}/${config.pulseVersion}/${artifact.file.name}")
+                            assert expected.isFile(): "Missing staged Pulse artifact: ${expected.name}"
+                            assert sha256(expected) == sha256(artifact.file): "Wrong Pulse candidate bytes: ${artifact.name}"
+                        }
+                        [module: artifact.name, version: artifact.moduleVersion.id.version,
+                         sha256: sha256(artifact.file)]
+                    }.sort { it.module }
+                    // Instrumentation can reuse Pulse from the tested APK instead of packaging it twice.
+                    if (!hasPulse || name != 'debugAndroidTestRuntimeClasspath') {
+                        assert hasPulse == !artifacts.isEmpty(): "Unexpected Pulse dependency set for ${project.path}:$name"
+                    }
+                    if (hasPulse && name == 'debugUnitTestRuntimeClasspath') {
+                        assert artifacts.any { it.module == 'mvi-platform-android-testing' }
+                    }
+                    variants[name] = artifacts
+                }
+                def pluginArtifacts = [project.rootProject, project].unique().collectMany {
+                    it.buildscript.configurations.classpath.resolvedConfiguration.resolvedArtifacts.findAll {
+                        it.moduleVersion.id.group == 'io.github.magic-xu' &&
+                            it.name == 'magic-android-platform-gradle-plugin'
+                    }
+                }
+                // Composite Smoke uses project substitution; Maven consumers must resolve the marker's JAR.
+                if (!config.compositeSmoke) {
+                    assert !pluginArtifacts.isEmpty(): 'Platform implementation was not resolved as a Maven artifact'
+                    pluginArtifacts.each { artifact ->
+                        assert artifact.moduleVersion.id.version == config.platformVersion
+                        if (config.platformRepository.startsWith('file:')) {
+                            def expected = new File(new File(new URI(config.platformRepository)),
+                                "io/github/magic-xu/${artifact.name}/${config.platformVersion}/${artifact.file.name}")
+                            assert expected.isFile() && sha256(expected) == sha256(artifact.file):
+                                'Wrong staged Platform implementation bytes'
+                        }
+                    }
+                }
+                def output = new File(config.resolutionDirectory, project.path.replace(':', '_') + '.json')
+                output.parentFile.mkdirs()
+                output.text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                    project: project.path, platformVersion: config.platformVersion,
+                    platformRepository: config.platformRepository, pulseRepository: config.pulseRepository,
+                    platformArtifacts: pluginArtifacts.collect { artifact ->
+                        [module: artifact.name, version: artifact.moduleVersion.id.version,
+                         sha256: sha256(artifact.file)]
+                    }.unique(),
+                    variants: variants, compositeSmoke: config.compositeSmoke ?: false
+                ]))
+            }
+        }
+    }
+}

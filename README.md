@@ -122,6 +122,10 @@ Run the plugin tests and then compile the isolated consumer:
 The Maven-mode Smoke App build consumes the generated plugin marker POMs and implementation JAR from
 the isolated Maven repository. It must not resolve the platform through the composite source build.
 
+For a Platform/Pulse candidate, run the [consumer regression workflow](docs/engineering/consumer-regression.md).
+It verifies the Factory, SnapMosaic and MeloNest at pinned commits using isolated candidate artifacts,
+with optional device tests and a local evidence report. Its tool tests also run in `releaseCheck`.
+
 ## Develop platform changes with a local consumer
 
 Composite builds are for developing an unreleased Platform change against a real consumer. Add the
