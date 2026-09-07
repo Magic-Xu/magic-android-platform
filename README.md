@@ -18,9 +18,14 @@ POM metadata, and signatures. All plugin IDs share the same platform version and
 together.
 
 The source belongs in the independent `magic-android-platform` Git repository. Released plugin
-artifacts belong in Maven Central. This source targets version `1.1.0`, retaining Pulse `0.4.0`
-and adding the Android Split testing baseline. The Android App Factory promotes its default separately
+artifacts belong in Maven Central. This source targets candidate version `1.2.0`, promoting the
+Compose and Android Split testing dependencies together to Pulse `0.5.0`. Published `1.1.0` remains the stable baseline until release
+verification completes. The Android App Factory promotes its default separately
 after validating a newly generated workspace against the public release.
+
+Pulse 0.5 adds precise mutation outcomes and bounded Split diagnostics while retaining the Boolean
+mutation methods. See its [release notes](https://github.com/Magic-Xu/pulse/blob/master/docs/RELEASE_NOTES_0.5.0.md)
+for result semantics and telemetry limits.
 
 ## Use the released platform
 

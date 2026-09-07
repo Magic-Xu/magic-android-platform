@@ -232,6 +232,41 @@ Factory 固定 Application、Compose、Pulse、Quality 四个插件的同一稳�
 Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器拒绝 `0.x`、snapshot 和
 本机路径；本地 `--platform-source` 仅供临时验收解析，不写入生成仓库。
 
+### Phase 4B：统一需求交付与仓库信息架构
+
+状态：已纳入当前 Magic App Dev Plugin 和 Factory。
+
+`app-end-to-end-delivery` 已成为 Factory 生成项目的统一需求交付入口。它先按语义归属路由
+需求，再选择最小必要产物和风险匹配的验证，不再默认把需求解释为新增页面：
+
+| 需求形态 | 默认归属 | 最小产物方向 |
+| --- | --- | --- |
+| 有自身产品状态和交互的 UI | `feature` | 扩展或新增 feature 状态、UI 和行为测试；只有独立页面才使用页面 MVI 骨架 |
+| 不依赖 UI 与 Android 的稳定业务规则 | `domain` | 领域模型、规则、用例或引擎及纯 Kotlin 测试 |
+| 文件、网络、媒体、存储或 Android 系统能力 | `core` | 最小有效 gateway、平台实现及边界测试 |
+| 跨 feature 导航、副作用或生命周期编排 | `app` | typed outcome、effect handler、composition 或 navigation |
+| 多 App 共享的构建、依赖或质量决策 | Platform | convention plugin、质量规则及 Consumer 契约测试 |
+| 新产品工作区初始化 | Factory | Android 与法律站点双仓、初始规范和完整生成验收 |
+
+一个需求可以跨多层，但每层只持有自己的语义，依赖方向保持
+`app -> feature -> domain -> core`，feature 不横向依赖。交付 Skill 负责判断和编排，不是
+Feature Factory；不得为结构整齐创建空层、无用接口、无用 Contract 或产品特例。
+
+Factory 同时把可复用的仓库信息架构写入新 App：当前产品、工程、运维和决策文档位于
+`docs/`，可编辑设计源位于 `design/`，工具位于 `tools/`，外部发布输入位于 `publishing/`，
+完成版本的不可变证据位于 `releases/`，可复现输出位于忽略的根 `build/`。法律站点规范源
+迁至 `publishing/legal/`；生成仓库自带布局校验器、契约测试和 PR CI。后续需求由交付 Skill
+遵守并运行目标 App 的布局门禁，因此该约束同时覆盖“创建 App”和“持续开发”，但职责不同：
+Factory 初始化，Consumer 持有，交付 Skill 执行。
+
+当前不把 App 路径或布局例外迁入 Platform。只有多个仍维护的真实 App 证明相同规则是稳定的
+共享工程不变量时，才考虑把通用部分提升到 Platform Quality；产品路径和兼容性例外继续由
+各 App 持有。
+
+实现与验证依据：[Factory PR #8](https://github.com/Magic-Xu/magic-app-dev-plugin/pull/8) 和
+[Plugin PR #9](https://github.com/Magic-Xu/magic-app-dev-plugin/pull/9)。插件内容变更必须提升
+SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
+
 ### Phase 5：按证据扩展 runtime
 
 只有当至少两个真实 App 共享相同语义、生命周期和测试契约时，才考虑新增 runtime library，例如 Consent、Ads gateway 或 Media I/O。新增模块仍遵循一个仓库版本和一个发布流程；除非出现明确的独立兼容性需求，否则不拆独立版本线。
@@ -271,26 +306,30 @@ Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器�
 
 当前状态：
 
-- 当前源码目标为 `1.1.0`，Pulse 仍固定 `0.4.0`。Pulse 插件增加 Android Split 测试基线，
-  Smoke 的真实 ViewModel 覆盖正常执行、队列满、恢复接收与关闭；UI 接收结果不再被丢弃。
-- 平台 `1.0.0` 已发布到 Maven Central；完整公共制品、签名、四个 marker 和 Central-only
-  Smoke App 均已通过发布 Workflow 验证；
+- 当前源码目标为候选版 `1.2.0`，将 Compose 和 Android Split 测试制品同时升级到 Pulse `0.5.0`；
+  准入反馈、真实 ViewModel 测试及四个可选插件的职责保持一致；
+- `1.2.0` 已通过插件发布门禁、源码与暂存 Smoke、配置缓存复用、Factory 全新工作区，以及
+  MeloNest 完整构建和三项真机回归；这些消费者已使用公开 Pulse `0.5.0`；
+- 平台 `1.1.0` 已发布到 Maven Central；签名、marker 和 Central-only Smoke App 均通过
+  [发布验证](https://github.com/Magic-Xu/magic-android-platform/actions/runs/34131920090)；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合持续覆盖源码和发布制品；
-- MeloNest 已通过四插件、Pulse 0.4、完整构建和设备回归，并已迁移到 Maven Central
-  `1.0.0` 后合入主干，是当前真实 Consumer 参考；
-- Factory 已用 Maven Central `1.0.0` 生成全新工作区，并通过结构、Git、质量、单测、Lint、
-  Debug/Release APK 和 Release AAB 验证；
+- MeloNest 已将 Platform `1.1.0`、Pulse `0.4.0` 的输入交付和观察任务生命周期改动合入主干，
+  完整构建、真实 Store 单测与真机回归通过，是当前真实 Consumer 参考；
+- Factory 已用公开 `1.1.0` 通过全新生成验证，并经独立默认值变更及 PR CI 合入主干；
 - TickFloat 和 PetMood 已完成各自的历史验证使命，但产品将废弃，不再承担平台后续演进的
   长期参考 Consumer；
 - 后续稳定验证基线由 Platform Smoke App、Factory 全新生成 CI 和 MeloNest 真实消费共同组成。
 
 下一动作：
 
-1. Factory 持有“当前已完整验证的稳定平台版本”，平台发布新版本后通过独立变更升级默认值，
-   并由全新生成 CI 证明可用后再交付；
-2. 平台变更依次通过插件契约与 Smoke App、Factory 全新生成、MeloNest 真实场景验证；
-3. 只有两个仍在维护的真实 App 形成相同稳定语义时，才新增 runtime library；
-4. SnapMosaic 在产品确有接入需求时作为新的高价值 Consumer，不为凑验证数量提前迁移。
+1. 在仍维护 App 的真实需求中使用 `app-end-to-end-delivery`，验证语义归属、最小产物与风险
+   匹配证据，不为补场景数量制造无产品价值的功能；
+2. Factory 继续持有已完整验证的稳定平台版本；发布后先执行候选版本的全新生成验证，
+   再通过独立变更提升默认值，并由 PR CI 重新验证；
+3. 平台变更依次通过插件契约与 Smoke App、Factory 全新生成、MeloNest 真实场景验证；
+4. 仓库布局的通用部分只有在多个仍维护 App 证明为稳定共享不变量后才进入 Platform Quality；
+5. 只有两个仍维护的真实 App 形成相同语义、生命周期和测试契约时，才新增 runtime library；
+6. SnapMosaic 在产品确有接入需求时再评估，不为凑验证数量提前迁移。
 
 ## 11. 新会话恢复顺序
 
@@ -300,4 +339,5 @@ Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器�
 2. 阅读根目录 `README.md`、`docs/engineering/architecture.md` 和相关 ADR；
 3. 检查平台仓库与目标 App 的当前分支和工作区，不假设它们仍与本文记录一致；
 4. 运行平台验证命令；
-5. 根据“当前状态与下一动作”继续，不跳过真实 App 验证直接修改 Factory 或发布。
+5. App 需求从 `app-end-to-end-delivery` 进入；Platform 变更按本总纲的证据链验证，不跳过
+   真实 App 证据直接扩展公共能力或发布。
