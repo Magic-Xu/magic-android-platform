@@ -271,6 +271,8 @@ Pulse Store，并运行 `check`、Debug/Release APK 和 Release AAB。生成器�
 
 当前状态：
 
+- 当前源码目标为 `1.1.0`，Pulse 仍固定 `0.4.0`。Pulse 插件增加 Android Split 测试基线，
+  Smoke 的真实 ViewModel 覆盖正常执行、队列满、恢复接收与关闭；UI 接收结果不再被丢弃。
 - 平台 `1.0.0` 已发布到 Maven Central；完整公共制品、签名、四个 marker 和 Central-only
   Smoke App 均已通过发布 Workflow 验证；
 - Smoke App 的 Application-only、Compose-only、Full 三种组合持续覆盖源码和发布制品；

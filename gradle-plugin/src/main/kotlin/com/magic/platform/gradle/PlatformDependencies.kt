@@ -16,5 +16,5 @@ internal object PlatformDependencies {
     const val Junit = "junit:junit:4.13.2"
     const val PulseAndroidCompose =
         "io.github.magic-xu:mvi-platform-android-compose:0.4.0"
-    const val PulseTesting = "io.github.magic-xu:mvi-testing:0.4.0"
+    const val PulseTesting = "io.github.magic-xu:mvi-platform-android-testing:0.4.0"
 }

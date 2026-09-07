@@ -8,6 +8,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.magic.mvicore.android.compose.collectStateAsStateWithLifecycle
+import com.magic.mvicore.contract.EnqueueResult
 import com.magic.platform.smoke.R
 import com.magic.platform.smoke.feature.home.contract.HomeIntent
 import com.magic.platform.smoke.feature.home.contract.HomeState
@@ -23,15 +27,23 @@ import com.magic.platform.smoke.feature.home.presentation.HomeViewModel
 @Composable
 fun HomeRoute(viewModel: HomeViewModel = viewModel()) {
     val state by viewModel.collectStateAsStateWithLifecycle(LocalLifecycleOwner.current)
+    var admissionRejected by remember(viewModel) { mutableStateOf(false) }
     HomeScreen(
         state = state,
-        onIntent = viewModel::onIntent,
+        admissionRejected = admissionRejected,
+        onIntent = { intent ->
+            admissionRejected = when (viewModel.onIntent(intent)) {
+                is EnqueueResult.Enqueued -> false
+                EnqueueResult.Full, is EnqueueResult.Rejected -> true
+            }
+        },
     )
 }
 
 @Composable
 fun HomeScreen(
     state: HomeState,
+    admissionRejected: Boolean,
     onIntent: (HomeIntent) -> Unit,
 ) {
     Column(
@@ -53,6 +65,9 @@ fun HomeScreen(
         )
         Button(onClick = { onIntent(HomeIntent.OnPrimaryClick) }) {
             Text(text = stringResource(R.string.primary_action))
+        }
+        if (admissionRejected) {
+            Text(text = stringResource(R.string.input_not_accepted))
         }
     }
 }
