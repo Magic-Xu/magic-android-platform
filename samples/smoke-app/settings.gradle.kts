@@ -7,7 +7,7 @@ pluginManagement {
         .orNull
     val magicAndroidPlatformVersion = providers
         .gradleProperty("magicAndroidPlatformVersion")
-        .getOrElse("1.1.0")
+        .getOrElse("1.2.0")
 
     check(
         listOfNotNull(
