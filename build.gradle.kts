@@ -123,6 +123,13 @@ tasks.register("verifyMavenCentralConfig") {
     }
 }
 
+val consumerRegressionToolCheck by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Tests pinned consumer snapshots and regression evidence handling."
+    commandLine("python3", "-m", "unittest", "discover", "-s", "scripts/consumer-regression", "-p", "test_*.py")
+    environment("PYTHONDONTWRITEBYTECODE", "1")
+}
+
 tasks.register("releaseCheck") {
     group = "verification"
     description = "Runs the platform, publication, version, and Maven Central release gates."
@@ -131,5 +138,6 @@ tasks.register("releaseCheck") {
         "publicationCheck",
         "verifyVersionConsistency",
         "verifyMavenCentralConfig",
+        consumerRegressionToolCheck,
     )
 }

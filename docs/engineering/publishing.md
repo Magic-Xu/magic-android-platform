@@ -36,10 +36,9 @@ signing credentials. Never commit either credential.
 
 ## Candidate gate
 
-The initial public release is `1.0.0`, matching the minimum version accepted by the Android App
-Factory. Before tagging it:
+Before tagging a new version:
 
-1. Set `VERSION_NAME=1.0.0` in `gradle.properties`.
+1. Set `VERSION_NAME` in `gradle.properties` to the intended new semantic version.
 2. Run the complete local release gate:
 
    ```bash
@@ -47,12 +46,17 @@ Factory. Before tagging it:
    ./gradlew -p samples/smoke-app clean check assembleDebug
    ./gradlew -p samples/smoke-app \
      -PmagicAndroidPlatformRepositoryPath=../../build/publication-verification-repository \
-     -PmagicAndroidPlatformVersion=1.0.0 \
+     -PmagicAndroidPlatformVersion="<candidate-version>" \
      clean check assembleDebug
    ```
 
-3. Require a clean worktree and successful CI for the exact release commit.
-4. Create the annotated tag `v1.0.0` on that exact commit.
+3. Commit the candidate and run the [consumer regression workflow](consumer-regression.md),
+   including the pinned Factory, SnapMosaic and MeloNest. Review the actual resolved versions,
+   artifacts and device coverage; add the product/device checks required by the change. This is a
+   maintainer gate because public CI does not have private app sources or signing configuration.
+4. Require a clean worktree and successful CI for the exact release commit. Evidence from an older
+   commit does not qualify a changed candidate.
+5. Create the annotated tag `v<version>` on that exact commit after release authorization.
 
 Do not run the remote publish task manually. The guarded annotated-tag
 `.github/workflows/publish-maven-central.yml` workflow verifies the tag and version, reruns every
@@ -60,6 +64,5 @@ release gate, checks signed candidate files, publishes through the Central Porta
 implementation and marker artifacts to become public, and finally rebuilds the Smoke App without
 local platform sources.
 
-For a later release, update `VERSION_NAME`, pass the same candidate gates, and create the matching
-annotated semantic-version tag. The workflow rejects tags that do not exactly match the source
-version.
+The workflow rejects tags that do not exactly match the source version. After publication, run the
+consumer workflow in `--mode published` before promoting the Factory default in its own repository.

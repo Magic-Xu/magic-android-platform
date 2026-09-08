@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "factory": {
+    "repository": "Magic-Xu/magic-app-dev-plugin",
+    "commit": "5ac923cd5d4ca72bcec6780cb45fb725287da07d"
+  },
+  "consumers": {
+    "snapmosaic": {
+      "repository": "Magic-Xu/SnapMosaic",
+      "commit": "679909c295ab3d636f514f15604e0bc8b64b9788",
+      "localConfig": ["local.properties", "app/google-services.json"],
+      "checks": [
+        ["python3", "tools/analytics/analytics_schema.py", "--check"],
+        ["python3", "-m", "unittest", "discover", "-s", "tools/analytics", "-p", "test_*.py"],
+        ["python3", "tools/repository/validate_layout.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "tools/repository", "-p", "test_*.py"]
+      ],
+      "applicationId": "com.magic.snapmosaic",
+      "deviceClasses": [
+        "com.magic.snapmosaic.flow.EditorSaveFlowInstrumentedTest",
+        "com.magic.snapmosaic.migration.EditorInputMigrationInstrumentedTest",
+        "com.magic.snapmosaic.migration.RootCommerceMigrationInstrumentedTest",
+        "com.magic.snapmosaic.migration.SharedImageHandoffMigrationInstrumentedTest"
+      ]
+    },
+    "melonest": {
+      "repository": "Magic-Xu/MeloNest",
+      "commit": "b72fdef46cdcb57be15040a5ef5ada7c2e0aaa93",
+      "localConfig": ["local.properties", "local.gradle", "app/google-services.json"],
+      "checks": [],
+      "applicationId": "com.magic.melonest",
+      "deviceClasses": [
+        "com.magic.melonest.feature.create.presentation.CreateViewModelLifecycleTest",
+        "com.magic.melonest.feature.MeloNestPulseRootSmokeTest"
+      ]
+    }
+  }
+}
