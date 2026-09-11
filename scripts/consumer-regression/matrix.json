@@ -7,7 +7,7 @@
   "consumers": {
     "snapmosaic": {
       "repository": "Magic-Xu/SnapMosaic",
-      "commit": "679909c295ab3d636f514f15604e0bc8b64b9788",
+      "commit": "76b3c15f4c56a20653e5fa35a09550ac1f63c129",
       "localConfig": ["local.properties", "app/google-services.json"],
       "checks": [
         ["python3", "tools/analytics/analytics_schema.py", "--check"],
@@ -19,6 +19,7 @@
       "deviceClasses": [
         "com.magic.snapmosaic.flow.EditorSaveFlowInstrumentedTest",
         "com.magic.snapmosaic.migration.EditorInputMigrationInstrumentedTest",
+        "com.magic.snapmosaic.migration.EditorInputLifecycleInstrumentedTest",
         "com.magic.snapmosaic.migration.RootCommerceMigrationInstrumentedTest",
         "com.magic.snapmosaic.migration.SharedImageHandoffMigrationInstrumentedTest"
       ]

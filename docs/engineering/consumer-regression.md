@@ -53,7 +53,10 @@ running without an operator. The runner does not change device security settings
 | Smoke | Source and staged Maven builds; Application-only, Compose-only and full combinations |
 | Fresh Factory workspace | Canonical generator and structure validator; full build gates below |
 | SnapMosaic and MeloNest | Pinned repository checks; full build gates below |
-| Selected device tests | SnapMosaic editor save/input, commerce and shared-image handoff; MeloNest Create lifecycle and root routing |
+| Selected device tests | SnapMosaic editor save/input/lifecycle, commerce and shared-image handoff; MeloNest Create lifecycle and root routing |
+
+SnapMosaic's editor lifecycle checks cover pending input across image replacement/clear and
+cancellation when the ViewModel owner closes.
 
 Every generated or real app runs `check`, Debug APK, Debug test APK, Release APK and Release AAB
 builds. The Factory structure validator runs with `--skip-build` because the runner executes its
