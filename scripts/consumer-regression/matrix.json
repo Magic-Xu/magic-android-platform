@@ -7,7 +7,7 @@
   "consumers": {
     "snapmosaic": {
       "repository": "Magic-Xu/SnapMosaic",
-      "commit": "9118be9932c9a46b169df682bac7a9310f92199e",
+      "commit": "76b3c15f4c56a20653e5fa35a09550ac1f63c129",
       "localConfig": ["local.properties", "app/google-services.json"],
       "checks": [
         ["python3", "tools/analytics/analytics_schema.py", "--check"],
