@@ -29,6 +29,10 @@ Pulse 0.5 adds precise mutation outcomes and bounded Split diagnostics while ret
 mutation methods. See its [release notes](https://github.com/Magic-Xu/pulse/blob/master/docs/RELEASE_NOTES_0.5.0.md)
 for result semantics and telemetry limits.
 
+The source tree is preparing `1.3.0`, with API 37 compilation, AGP 9.4.1, Gradle 9.6.0
+and Compose BOM 2026.09.00. See the [migration note](docs/decisions/0002-android-37-toolchain.md).
+It remains a candidate until its publication and consumer checks complete.
+
 ## Use the released platform
 
 Configure both plugin and dependency repositories in `settings.gradle.kts`:
@@ -107,7 +111,7 @@ the platform integration is accepted.
 Requirements:
 
 - JDK 21 for Gradle
-- Android SDK 36
+- Android SDK 37 (`platforms;android-37.0`)
 
 Run the plugin tests and then compile the isolated consumer:
 
