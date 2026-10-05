@@ -9,7 +9,9 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = "Verification task has no output artifacts to cache")
 abstract class MagicQualityTask : DefaultTask() {
     @get:Internal
     abstract val projectRoot: DirectoryProperty
