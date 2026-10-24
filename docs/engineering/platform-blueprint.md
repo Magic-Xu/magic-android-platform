@@ -310,8 +310,11 @@ SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
 
 当前状态：
 
-- 当前稳定平台版本为 `1.2.0`，Compose 和 Android Split 测试制品均为 Pulse `0.5.0`；
-  准入反馈、真实 ViewModel 测试及四个可选插件的职责保持一致；
+- 当前稳定平台版本为 `1.3.0`，采用 API 37、AGP 9.4.1、Gradle 9.6.0 和 Compose BOM 2026.09.00；
+  Gradle 使用 JDK 21，Java 字节码仍为 17，Compose 和 Android Split 测试制品均为 Pulse `0.5.0`；
+- `1.3.0` 已完成插件与签名门禁、源码与暂存 Smoke，以及 Factory、SnapMosaic 和隔离迁移的
+  MeloNest 完整 Debug/Release APK 与 AAB 构建，并通过[正式发布流程](https://github.com/Magic-Xu/magic-android-platform/actions/runs/40102632360)
+  分发到 Maven Central。现有 App 的迁移与 Factory 默认值晋升仍分别验收；
 - `1.2.0` 已通过插件发布门禁、源码与暂存 Smoke、配置缓存复用、Factory 全新工作区，以及
   MeloNest 完整构建和三项真机回归；这些消费者已使用公开 Pulse `0.5.0`；
 - 平台 `1.2.0` 已发布到 Maven Central；签名、marker 和 Central-only Smoke App 均通过
@@ -323,7 +326,7 @@ SemVer 优先级，单独替换 cachebuster 不构成版本晋升。
 - Factory 已用公开 `1.2.0` 通过[全新生成验证](https://github.com/Magic-Xu/magic-app-dev-plugin/actions/runs/34140485590)，
   默认版本通过[独立变更](https://github.com/Magic-Xu/magic-app-dev-plugin/pull/13)及 PR CI 合入主干；
   当前正常生成默认使用 Platform `1.2.0`；
-- SnapMosaic 已完成公开 Platform `1.2.0`、Pulse `0.5.0` 迁移并合入主干，承担媒体编辑、
+- SnapMosaic 2.7.0 已使用 Platform `1.3.0`、Pulse `0.5.0`；平台正式发布后可直接从 Maven Central 解析，承担媒体编辑、
   分享交接、支付观察与 Release/R8 场景的生产 Consumer 验证；
 - TickFloat 和 PetMood 已完成各自的历史验证使命，但产品将废弃，不再承担平台后续演进的
   长期参考 Consumer；

@@ -18,10 +18,10 @@ POM metadata, and signatures. All plugin IDs share the same platform version and
 together.
 
 The source belongs in the independent `magic-android-platform` Git repository. Released plugin
-artifacts belong in Maven Central. Stable version `1.2.0` is published, with the Compose and Android
+artifacts belong in Maven Central. Stable version `1.3.0` is published, with the Compose and Android
 Split testing dependencies aligned on Pulse `0.5.0`. Its signed publication, all four plugin markers,
 and consumption without local platform sources passed the
-[release workflow](https://github.com/Magic-Xu/magic-android-platform/actions/runs/34139011280).
+[release workflow](https://github.com/Magic-Xu/magic-android-platform/actions/runs/40102632360).
 The Android App Factory promotes its default separately after validating a newly generated
 workspace against the public release.
 
@@ -29,9 +29,10 @@ Pulse 0.5 adds precise mutation outcomes and bounded Split diagnostics while ret
 mutation methods. See its [release notes](https://github.com/Magic-Xu/pulse/blob/master/docs/RELEASE_NOTES_0.5.0.md)
 for result semantics and telemetry limits.
 
-The source tree is preparing `1.3.0`, with API 37 compilation, AGP 9.4.1, Gradle 9.6.0
-and Compose BOM 2026.09.00. See the [migration note](docs/decisions/0002-android-37-toolchain.md).
-It remains a candidate until its publication and consumer checks complete.
+Version `1.3.0` compiles against API 37 with AGP 9.4.1, Gradle 9.6.0 and Compose BOM
+2026.09.00. Gradle runs on JDK 21; Kotlin remains 2.2.10 and Java bytecode remains 17.
+See the [migration note](docs/decisions/0002-android-37-toolchain.md) before upgrading an existing app.
+Consumers resolve the release directly from Maven Central; no local Platform repository is required.
 
 ## Use the released platform
 
@@ -73,10 +74,10 @@ four in the root build; a consumer that does not need a capability may omit its 
 ```kotlin
 // Root build.gradle.kts
 plugins {
-    id("io.github.magic-xu.magic-android-application") version "1.2.0" apply false
-    id("io.github.magic-xu.magic-android-compose") version "1.2.0" apply false
-    id("io.github.magic-xu.magic-android-pulse") version "1.2.0" apply false
-    id("io.github.magic-xu.magic-android-quality") version "1.2.0" apply false
+    id("io.github.magic-xu.magic-android-application") version "1.3.0" apply false
+    id("io.github.magic-xu.magic-android-compose") version "1.3.0" apply false
+    id("io.github.magic-xu.magic-android-pulse") version "1.3.0" apply false
+    id("io.github.magic-xu.magic-android-quality") version "1.3.0" apply false
 }
 ```
 
